@@ -18,10 +18,10 @@ GRID_STEP_EUROPE_KM = float(os.getenv('GRID_STEP_EUROPE_KM', 300))
 
 # Countries to download weather data for
 COUNTRIES = [
-    {"name": "germany",     "geojson": "germany.geojson"},
-    {"name": "france",      "geojson": "france.geojson"},
+    {"name": "germany",     "geojson": "DE.geojson"},
+    {"name": "france",      "geojson": "FR.geojson"},
     {"name": "italy",       "geojson": "italy.geojson"},
-    {"name": "netherlands", "geojson": "netherlands.geojson"},
+    {"name": "netherlands", "geojson": "NL.geojson"},
 ]
 
 # Convert km to approximate degrees (1 degree ≈ 111 km)
