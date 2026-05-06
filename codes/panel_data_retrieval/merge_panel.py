@@ -7,6 +7,7 @@ load_dotenv()
 PANEL_DATA_DIR = os.getenv('PANEL_DATA_DIR')
 ENERGY_PRICES_DIR = os.getenv('ENERGY_PRICES_DIR')
 ENERGY_SOURCES_DIR = os.getenv('ENERGY_SOURCES_DIR')
+TOTAL_PRODUCTION_DIR = os.getenv('TOTAL_PRODUCTION_DIR', 'total_production')
 WEATHER_DATA_DIR = os.getenv('WEATHER_DATA_DIR')
 
 COLUMN_TRANSLATIONS = {
@@ -17,6 +18,7 @@ COLUMN_TRANSLATIONS = {
     'energy_sources_B16': 'solar_production',
     'energy_sources_B19': 'wind_production',
     'energy_sources_B20': 'other_production',
+    'total_production_total_generation': 'total_generation',
     'weather_u100': 'wind_u100',
     'weather_v100': 'wind_v100',
     'weather_t2m': 'temperature',
@@ -62,6 +64,7 @@ def _load_zone(zone):
     """Load and merge the three per-zone CSVs into a single DataFrame with a 'time' index."""
     prices_path = os.path.join(PANEL_DATA_DIR, ENERGY_PRICES_DIR, f'energy_prices_{zone["name"]}.csv')
     sources_path = os.path.join(PANEL_DATA_DIR, ENERGY_SOURCES_DIR, f'energy_sources_{zone["name"]}.csv')
+    total_path = os.path.join(PANEL_DATA_DIR, TOTAL_PRODUCTION_DIR, f'total_production_{zone["name"]}.csv')
     weather_path = os.path.join(PANEL_DATA_DIR, WEATHER_DATA_DIR, f'weather_{zone["name"]}.csv')
 
     missing = [p for p in (prices_path, sources_path, weather_path) if not os.path.exists(p)]
@@ -75,11 +78,18 @@ def _load_zone(zone):
     sources = pd.read_csv(sources_path)
     sources = sources.rename(columns={c: f'energy_sources_{c}' for c in sources.columns if c != 'time'})
 
+    total_prod = None
+    if os.path.exists(total_path):
+        total_prod = pd.read_csv(total_path)
+        total_prod = total_prod.rename(columns={c: f'total_production_{c}' for c in total_prod.columns if c != 'time'})
+
     weather = pd.read_csv(weather_path)
     weather = weather.rename(columns={'valid_time': 'time'})
     weather = weather.rename(columns={c: f'weather_{c}' for c in weather.columns if c != 'time'})
 
     df = prices.merge(sources, on='time', how='outer')
+    if total_prod is not None:
+        df = df.merge(total_prod, on='time', how='left')
     df = df.merge(weather, on='time', how='outer')
     df = df.sort_values('time').reset_index(drop=True)
 
