@@ -14,7 +14,7 @@ ENERGY_PRICES_DIR = os.getenv('ENERGY_PRICES_DIR')
 SLEEP_TIME = float(os.getenv('SLEEP_TIME', 0.3))
 
 NS = 'urn:iec62325.351:tc57wg16:451-3:publicationdocument:7:3'
-YEARS = range(2020, 2027)
+YEARS = range(2020, 2026) # exclude 2026 since it's not complete yet
 
 
 def _download_zone_year(zone, year):
@@ -89,7 +89,7 @@ def download_energy_prices(zone, years=YEARS):
     zone : dict
         A bidding zone dict with at least ``code`` and ``name`` keys.
     years : iterable of int
-        Years to download. Defaults to 2020-2026.
+        Years to download. Defaults to 2020-2025.
     """
     os.makedirs(os.path.join(DATA_DIR, ENERGY_PRICES_DIR), exist_ok=True)
 

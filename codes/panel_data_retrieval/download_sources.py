@@ -14,7 +14,7 @@ TOTAL_PRODUCTION_DIR = os.getenv('TOTAL_PRODUCTION_DIR', 'total_production')
 SLEEP_TIME = float(os.getenv('SLEEP_TIME', 0.3))
 
 NS = 'urn:iec62325.351:tc57wg16:451-6:generationloaddocument:3:0'
-YEARS = range(2020, 2027)
+YEARS = range(2020, 2026) # exclude 2026 since it's not complete yet
 PSR_TYPES = ['B01', 'B04', 'B11', 'B16', 'B19', 'B20']
 
 
@@ -185,7 +185,7 @@ def download_sources(zone, years=YEARS, psr_types=PSR_TYPES):
     zone : dict
         A bidding zone dict with at least ``code`` and ``name`` keys.
     years : iterable of int
-        Years to download. Defaults to 2020-2026.
+        Years to download. Defaults to 2020-2025.
     psr_types : iterable of str
         ENTSO-E PSR type codes to download. Defaults to B01, B04, B11, B16, B19, B20.
     """
