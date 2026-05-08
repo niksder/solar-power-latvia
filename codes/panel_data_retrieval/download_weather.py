@@ -14,6 +14,7 @@ WEATHER_DATA_DIR = os.getenv('WEATHER_DATA_DIR')
 CONSTANTS_DIR = os.getenv('CONSTANTS_DIR')
 SLEEP_TIME = float(os.getenv('SLEEP_TIME', 0.3))
 GRID_STEP_KM = float(os.getenv('GRID_STEP_PANEL_KM', 150))
+GRID_STEP_SMALL_KM = float(os.getenv('GRID_STEP_SMALL_PANEL_KM', 100))
 
 VARIABLES = [
     "surface_solar_radiation_downwards",
@@ -27,7 +28,7 @@ DATASET = "reanalysis-era5-single-levels-timeseries"
 DATE_RANGE = "2016-01-01/2026-01-01" # exclude 2026 since it's not complete yet
 
 
-def _grid_points_for_zone(zone):
+def _grid_points_for_zone(zone, grid_step_km):
     """Return a list of (lon, lat) grid points inside the zone's geojson polygon."""
     geojson_path = os.path.join(DATA_DIR, CONSTANTS_DIR, zone['geojson'])
     with open(geojson_path, 'r') as f:
@@ -35,7 +36,7 @@ def _grid_points_for_zone(zone):
 
     polygon = shape(geojson_data['features'][0]['geometry'])
     min_lon, min_lat, max_lon, max_lat = polygon.bounds
-    grid_step = GRID_STEP_KM / 111.0
+    grid_step = grid_step_km / 111.0
 
     points = []
     lon = min_lon
@@ -76,8 +77,12 @@ def download_weather(zone):
         print(f'Skipping weather for {zone["name"]} (already exists)')
         return
 
-    grid_points = _grid_points_for_zone(zone)
+    grid_points = _grid_points_for_zone(zone, grid_step_km=GRID_STEP_KM)
     print(f'{zone["name"]}: {len(grid_points)} grid points found')
+    if len(grid_points) <= 3:
+        # Try again with a finer grid step if too few points found
+        grid_points = _grid_points_for_zone(zone, grid_step_km=GRID_STEP_SMALL_KM)
+        print(f'{zone["name"]}: {len(grid_points)} grid points found with smaller step')
 
     client = cdsapi.Client()
     point_dirs = []
