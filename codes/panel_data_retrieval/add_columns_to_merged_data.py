@@ -76,7 +76,7 @@ ZONE_COLORS = {
 
 plot_df = df.copy()
 plot_df['time'] = pd.to_datetime(plot_df['time'], utc=True, format='mixed')
-plot_df = plot_df[plot_df['time'] >= '2021-01-01']
+plot_df = plot_df[plot_df['time'] >= '2017-01-01']
 
 fig, ax = plt.subplots(figsize=(13, 6))
 for bzone, group in plot_df.groupby('bzone'):

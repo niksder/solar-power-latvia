@@ -9,8 +9,8 @@ format ms %tc
 gen date = dofc(ms)
 format date %td
 
-// Drop observations before 2021-01-01 and after 2026-01-01
-drop if date < td(01jan2021) | date >= td(01jan2026)
+// Drop observations before 2017-01-01 and after 2026-01-01
+drop if date < td(01jan2017) | date >= td(01jan2026)
 
 //drop if bzone == "Austria" | bzone == "Romania" | bzone == "SE1" | bzone == "SE2" | bzone == "Germany" // Austria only used gas for 1 year, Romania missing solar data for 2024. SE_1 and SE_2 don't have solar either.
 
