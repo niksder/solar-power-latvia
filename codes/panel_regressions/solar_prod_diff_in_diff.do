@@ -116,7 +116,7 @@ foreach k of local hy_pos_vals {
 // ib10 sets H2 2021 as the omitted base for both FE and interactions.
 xtreg solar_production `inter_vars' ///
     temperature hdd cdd wind ln_sun precipitation precipitation_weekly precipitation_monthly ///
-    i.day_of_week ib10.hy_seq_pos, ///
+    i.day_of_week i.month /*ib10.hy_seq_pos*/, ///
     fe vce(cluster bzone_id)
 eststo event_solar
 

@@ -18,20 +18,24 @@ drop _tmp
 label var gas_share_pre "Gas share on Feb 23 2022 (pre-war, 0–1)"
 
 // Scale to percentage points for readable coefficients
-gen gas_share_pre_pct = gas_share_pre * 100
+gen gas_share_pre_pct = gas_share_pre
 label var gas_share_pre_pct "Gas share on Feb 23 2022 (%)"
 
 // Pre-war solar share: value on Feb 23 2022 (baseline solar penetration per bzone)
 gen _tmp2 = solar_share if date == td(23feb2022)
 bysort bzone_id: egen solar_share_pre = max(_tmp2)
 drop _tmp2
-label var solar_share_pre "Solar share on Feb 23 2022 (pre-war baseline, %)"
+label var solar_share_pre "Solar share on Feb 23 2022 (pre-war baseline, 0–1)"
+
+// Scale to percentage points for readable coefficients
+gen solar_share_pre_pct = solar_share_pre
+label var solar_share_pre_pct "Solar share on Feb 23 2022 (%)"
 
 // Verify treatment values
 di "Pre-war gas share by bzone:"
 table bzone, statistic(mean gas_share_pre_pct)
 di "Pre-war solar share by bzone:"
-table bzone, statistic(mean solar_share_pre)
+table bzone, statistic(mean solar_share_pre_pct)
 
 // =============================================================================
 // POST-INVASION INDICATOR  (Russia invaded Ukraine Feb 24 2022)
@@ -55,7 +59,7 @@ label var post "Post-invasion dummy (>= Feb 24 2022)"
 // =============================================================================
 
 // Spec 1: solar share
-xtreg solar_share c.gas_share_pre_pct#i.post solar_share_pre ///
+xtreg solar_share c.gas_share_pre_pct#i.post solar_share_pre_pct ///
     temperature hdd cdd wind ln_sun precipitation precipitation_weekly precipitation_monthly ///
     i.day_of_week i.month, ///
     fe vce(cluster bzone_id)
@@ -68,7 +72,7 @@ gen ln_solar_share = ln(solar_share + 1)
 label var ln_solar_share "ln(solar_share + 1)"
 
 // Spec 2: ln(solar_share + 1) — semi-elasticity interpretation
-xtreg ln_solar_share c.gas_share_pre_pct#i.post solar_share_pre ///
+xtreg ln_solar_share c.gas_share_pre_pct#i.post solar_share_pre_pct ///
     temperature hdd cdd wind ln_sun precipitation precipitation_weekly precipitation_monthly ///
     i.day_of_week i.month, ///
     fe vce(cluster bzone_id)
@@ -121,9 +125,9 @@ foreach k of local hy_pos_vals {
 
 // Two-way FE: bzone absorbed by xtreg fe, period absorbed by ib10.hy_seq_pos.
 // ib10 sets H2 2021 as the omitted base for both FE and interactions.
-xtreg solar_share `inter_vars' solar_share_pre ///
-    temperature hdd cdd wind ln_sun precipitation precipitation_weekly precipitation_monthly ///
-    i.day_of_week ib10.hy_seq_pos, ///
+xtreg solar_share `inter_vars' solar_share_pre_pct ///
+    //temperature hdd cdd wind ln_sun precipitation precipitation_weekly precipitation_monthly ///
+    i.day_of_week i.month ib10.hy_seq_pos, ///
     fe vce(cluster bzone_id)
 eststo event_solar
 
