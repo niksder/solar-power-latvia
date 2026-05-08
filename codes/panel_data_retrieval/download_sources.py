@@ -15,7 +15,7 @@ SLEEP_TIME = float(os.getenv('SLEEP_TIME', 0.3))
 
 NS = 'urn:iec62325.351:tc57wg16:451-6:generationloaddocument:3:0'
 YEARS = range(2020, 2026) # exclude 2026 since it's not complete yet
-PSR_TYPES = ['B01', 'B04', 'B11', 'B16', 'B19', 'B20']
+PSR_TYPES = ['B04', 'B16']
 
 
 def _download_zone_year_psr(zone, year, psr_type):
@@ -32,9 +32,36 @@ def _download_zone_year_psr(zone, year, psr_type):
         'securityToken': ENTSOE_KEY,
     }
 
-    response = requests.get(api_url, params=params)
+    max_attempts = 5
+    for attempt in range(1, max_attempts + 1):
+        try:
+            response = requests.get(api_url, params=params)
+        except requests.exceptions.RequestException as e:
+            print(f'Network error downloading energy sources for {zone["name"]} {year} {psr_type} (attempt {attempt}/{max_attempts}): {e}')
+            if attempt < max_attempts:
+                sleep(SLEEP_TIME)
+            continue
 
-    if response.status_code == 200:
+        if response.status_code != 200:
+            print(f'Failed to download energy sources for {zone["name"]} {year} {psr_type} (attempt {attempt}/{max_attempts}). Status code: {response.status_code}')
+            if attempt < max_attempts:
+                sleep(SLEEP_TIME)
+            continue
+
+        try:
+            root = ET.fromstring(response.content)
+        except ET.ParseError as e:
+            print(f'Failed to parse XML response for {zone["name"]} {year} {psr_type} (attempt {attempt}/{max_attempts}): {e}')
+            if attempt < max_attempts:
+                sleep(SLEEP_TIME)
+            continue
+
+        if root.tag != f'{{{NS}}}GL_MarketDocument':
+            print(f'Unexpected document type for {zone["name"]} {year} {psr_type} (attempt {attempt}/{max_attempts}): {root.tag}')
+            if attempt < max_attempts:
+                sleep(SLEEP_TIME)
+            continue
+
         file_path = os.path.join(
             DATA_DIR, ENERGY_SOURCES_DIR,
             f'energy_sources_{zone["name"]}_{year}_{psr_type}.xml'
@@ -42,8 +69,9 @@ def _download_zone_year_psr(zone, year, psr_type):
         with open(file_path, 'wb') as f:
             f.write(response.content)
         print(f'Downloaded energy sources for {zone["name"]} {year} {psr_type} -> {file_path}')
-    else:
-        print(f'Failed to download energy sources for {zone["name"]} {year} {psr_type}. Status code: {response.status_code}')
+        return
+
+    print(f'Giving up on energy sources for {zone["name"]} {year} {psr_type} after {max_attempts} attempts.')
 
 
 def _download_zone_year_total(zone, year):
@@ -59,9 +87,36 @@ def _download_zone_year_total(zone, year):
         'securityToken': ENTSOE_KEY,
     }
 
-    response = requests.get(api_url, params=params)
+    max_attempts = 5
+    for attempt in range(1, max_attempts + 1):
+        try:
+            response = requests.get(api_url, params=params)
+        except requests.exceptions.RequestException as e:
+            print(f'Network error downloading total generation for {zone["name"]} {year} (attempt {attempt}/{max_attempts}): {e}')
+            if attempt < max_attempts:
+                sleep(SLEEP_TIME)
+            continue
 
-    if response.status_code == 200:
+        if response.status_code != 200:
+            print(f'Failed to download total generation for {zone["name"]} {year} (attempt {attempt}/{max_attempts}). Status code: {response.status_code}')
+            if attempt < max_attempts:
+                sleep(SLEEP_TIME)
+            continue
+
+        try:
+            root = ET.fromstring(response.content)
+        except ET.ParseError as e:
+            print(f'Failed to parse XML response for total generation {zone["name"]} {year} (attempt {attempt}/{max_attempts}): {e}')
+            if attempt < max_attempts:
+                sleep(SLEEP_TIME)
+            continue
+
+        if root.tag != f'{{{NS}}}GL_MarketDocument':
+            print(f'Unexpected document type for total generation {zone["name"]} {year} (attempt {attempt}/{max_attempts}): {root.tag}')
+            if attempt < max_attempts:
+                sleep(SLEEP_TIME)
+            continue
+
         file_path = os.path.join(
             DATA_DIR, TOTAL_PRODUCTION_DIR,
             f'energy_sources_{zone["name"]}_{year}_total.xml'
@@ -69,8 +124,9 @@ def _download_zone_year_total(zone, year):
         with open(file_path, 'wb') as f:
             f.write(response.content)
         print(f'Downloaded total generation for {zone["name"]} {year} -> {file_path}')
-    else:
-        print(f'Failed to download total generation for {zone["name"]} {year}. Status code: {response.status_code}')
+        return
+
+    print(f'Giving up on total generation for {zone["name"]} {year} after {max_attempts} attempts.')
 
 
 def _parse_zone_year_total(zone, year):
@@ -110,6 +166,10 @@ def _parse_zone_year_total(zone, year):
                 pos = int(point.find(f'{{{NS}}}position').text)
                 qty = float(point.find(f'{{{NS}}}quantity').text)
                 sparse[pos] = qty
+
+            if not sparse:
+                print(f'Warning: period {start_str}\u2013{end_str} has no data points for {zone["name"]} {year} total, skipping.')
+                continue
 
             current_qty = 0.0
             for pos in range(1, total_points + 1):
@@ -162,13 +222,18 @@ def _parse_zone_year_psr(zone, year, psr_type):
                 qty = float(point.find(f'{{{NS}}}quantity').text)
                 sparse[pos] = qty
 
-            # Expand with forward-fill (A03 curve type)
+            if not sparse:
+                print(f'Warning: period {start_str}\u2013{end_str} has no data points for {zone["name"]} {year} {psr_type}, skipping.')
+                continue
+
+            # Expand with forward-fill (A03 curve type); accumulate across TimeSeries
             current_qty = 0.0
             for pos in range(1, total_points + 1):
                 if pos in sparse:
                     current_qty = sparse[pos]
                 dt = start_dt + (pos - 1) * delta
-                result[dt.strftime('%Y-%m-%d %H:%M:%S')] = current_qty
+                key = dt.strftime('%Y-%m-%d %H:%M:%S')
+                result[key] = result.get(key, 0.0) + current_qty
 
     return result
 
