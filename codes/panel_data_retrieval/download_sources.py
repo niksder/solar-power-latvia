@@ -14,7 +14,7 @@ TOTAL_PRODUCTION_DIR = os.getenv('TOTAL_PRODUCTION_DIR', 'total_production')
 SLEEP_TIME = float(os.getenv('SLEEP_TIME', 0.3))
 
 NS = 'urn:iec62325.351:tc57wg16:451-6:generationloaddocument:3:0'
-YEARS = range(2020, 2026) # exclude 2026 since it's not complete yet
+YEARS = range(2016, 2026) # exclude 2026 since it's not complete yet
 PSR_TYPES = ['B04', 'B16']
 
 

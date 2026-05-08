@@ -14,7 +14,7 @@ ENERGY_PRICES_DIR = os.getenv('ENERGY_PRICES_DIR')
 SLEEP_TIME = float(os.getenv('SLEEP_TIME', 0.3))
 
 NS = 'urn:iec62325.351:tc57wg16:451-3:publicationdocument:7:3'
-YEARS = range(2020, 2026) # exclude 2026 since it's not complete yet
+YEARS = range(2016, 2026) # exclude 2026 since it's not complete yet
 
 
 def _download_zone_year(zone, year):

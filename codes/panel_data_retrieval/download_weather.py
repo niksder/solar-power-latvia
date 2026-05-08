@@ -24,7 +24,7 @@ VARIABLES = [
 ]
 
 DATASET = "reanalysis-era5-single-levels-timeseries"
-DATE_RANGE = "2020-01-01/2026-01-01" # exclude 2026 since it's not complete yet
+DATE_RANGE = "2016-01-01/2026-01-01" # exclude 2026 since it's not complete yet
 
 
 def _grid_points_for_zone(zone):
