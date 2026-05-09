@@ -1,5 +1,7 @@
+import gc
 import os
 import math
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
@@ -15,9 +17,9 @@ OUTPUTS_DIR = os.getenv('OUTPUTS_DIR', 'outputs')
 
 MERGED_PANEL_DATA_PATH = os.path.join(PANEL_DATA_DIR, 'merged_panel_data.csv')
 
-df = pd.read_csv(MERGED_PANEL_DATA_PATH)
+df = pd.read_csv(MERGED_PANEL_DATA_PATH, dtype={'bzone': 'category'})
 df['time'] = pd.to_datetime(df['time'], utc=True, format='mixed')
-df = df.drop(columns=['gas_share', 'solar_share'], errors='ignore')
+df = df.drop(columns=['gas_share', 'solar_share', 'solar_prod_yearly', 'gas_prod_yearly', 'solar_prod_growth', 'solar_share_growth'], errors='ignore')
 df = df.dropna(subset=['time'])
 df = df.sort_values(['bzone', 'time']).reset_index(drop=True)
 
@@ -30,6 +32,12 @@ def _rolling_shares(group):
     total_safe = rolling_total.replace(0, float('nan'))
     group['gas_share'] = rolling_gas / total_safe
     group['solar_share'] = rolling_solar / total_safe
+    group['solar_prod_yearly'] = rolling_solar
+    group['gas_prod_yearly'] = rolling_gas
+    log_solar = np.log(rolling_solar.replace(0, float('nan')))
+    group['solar_prod_growth'] = log_solar - log_solar.shift(1)
+    log_solar_share = np.log(group['solar_share'].replace(0, float('nan')))
+    group['solar_share_growth'] = log_solar_share - log_solar_share.shift(1)
     return group.reset_index()
 
 
@@ -51,7 +59,14 @@ df = df.sort_values(['bzone', 'time']).reset_index(drop=True)
 df['time'] = df['time'].dt.strftime('%Y-%m-%dT%H:%M:%SZ')
 
 df.to_csv(MERGED_PANEL_DATA_PATH, index=False)
-print(f'Added gas_share, solar_share, and accumulated precipitation columns. Wrote {len(df)} rows to {MERGED_PANEL_DATA_PATH}')
+print(f'Added gas_share, solar_share, solar_prod_yearly, gas_prod_yearly, solar_prod_growth, solar_share_growth, and accumulated precipitation columns. Wrote {len(df)} rows to {MERGED_PANEL_DATA_PATH}')
+
+del df
+gc.collect()
+
+plot_df = pd.read_csv(MERGED_PANEL_DATA_PATH, usecols=['bzone', 'time', 'gas_share', 'solar_share'], dtype={'bzone': 'category'})
+plot_df['time'] = pd.to_datetime(plot_df['time'], utc=True, format='mixed')
+plot_df = plot_df[plot_df['time'] >= '2017-01-01']
 
 # --- Plot rolling gas share ---
 ZONE_COLORS = {
@@ -74,10 +89,6 @@ ZONE_COLORS = {
     'Slovakia':   '#086161',
 }
 
-plot_df = df.copy()
-plot_df['time'] = pd.to_datetime(plot_df['time'], utc=True, format='mixed')
-plot_df = plot_df[plot_df['time'] >= '2017-01-01']
-
 fig, ax = plt.subplots(figsize=(13, 6))
 for bzone, group in plot_df.groupby('bzone'):
     group = group.set_index('time').sort_index()
@@ -98,6 +109,7 @@ os.makedirs(os.path.dirname(plot_path), exist_ok=True)
 fig.savefig(plot_path, dpi=150)
 print(f'Plot saved to {plot_path}')
 plt.show()
+plt.close(fig)
 
 # --- Plot rolling solar share ---
 fig2, ax2 = plt.subplots(figsize=(13, 6))
@@ -119,4 +131,4 @@ plot_path2 = os.path.join(OUTPUTS_DIR, 'panel', 'others', 'rolling_solar_share.p
 fig2.savefig(plot_path2, dpi=150)
 print(f'Plot saved to {plot_path2}')
 plt.show()
-
+plt.close(fig2)
