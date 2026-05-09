@@ -33,8 +33,8 @@ gen post = (date >= td(24feb2022))
 label var post "Post-invasion dummy (>= Feb 24 2022)"
 
 // Log-transformed solar production
-gen ln_solar = ln(solar_production + 1)
-label var ln_solar "ln(solar_production + 1)"
+gen ln_solar = ln(solar_prod_yearly + 1)
+label var ln_solar "ln(solar_prod_yearly + 1)"
 
 // =============================================================================
 // MAIN DiD REGRESSIONS
@@ -51,7 +51,7 @@ label var ln_solar "ln(solar_production + 1)"
 // =============================================================================
 
 // Spec 1: solar production levels (MWh)
-xtreg solar_production c.gas_share_pre_pct#i.post ///
+xtreg solar_prod_yearly c.gas_share_pre_pct#i.post ///
     temperature hdd cdd wind ln_sun precipitation precipitation_weekly precipitation_monthly ///
     i.day_of_week i.month, ///
     fe vce(cluster bzone_id)
@@ -60,7 +60,7 @@ eststo did_levels
 di "DiD coef (levels): " %9.3f _b[c.gas_share_pre_pct#1.post] ///
    "  SE: " %9.3f _se[c.gas_share_pre_pct#1.post]
 
-// Spec 2: ln(solar_production + 1) — semi-elasticity interpretation
+// Spec 2: ln(solar_prod_yearly + 1) — semi-elasticity interpretation
 xtreg ln_solar c.gas_share_pre_pct#i.post ///
     temperature hdd cdd wind ln_sun precipitation precipitation_weekly precipitation_monthly ///
     i.day_of_week i.month, ///
@@ -114,7 +114,7 @@ foreach k of local hy_pos_vals {
 
 // Two-way FE: bzone absorbed by xtreg fe, period absorbed by ib8.hy_seq_pos.
 // ib8 sets H2 2020 as the omitted base for both FE and interactions.
-xtreg solar_production `inter_vars' ///
+xtreg solar_prod_yearly `inter_vars' ///
     temperature hdd cdd wind ln_sun precipitation precipitation_weekly precipitation_monthly ///
     i.day_of_week i.month /*ib8.hy_seq_pos*/, ///
     fe vce(cluster bzone_id)
