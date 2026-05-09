@@ -27,7 +27,7 @@ collapse ///
     (sum)  gas_production ///
            solar_production ///
            total_generation precipitation ///
-    (mean) energy_price gas_share solar_share wind_u100 wind_v100 temperature sun wind ///
+    (mean) energy_price gas_share solar_share gas_prod_yearly solar_prod_yearly solar_prod_growth solar_share_growth wind_u100 wind_v100 temperature sun wind ///
            precipitation_24h precipitation_weekly precipitation_monthly ///
            year month week_of_year day_of_week, ///
     by(bzone date)
