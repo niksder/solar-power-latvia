@@ -60,7 +60,6 @@ label var post "Post-invasion dummy (>= Feb 24 2022)"
 
 // Spec 1: solar share
 xtreg solar_share c.gas_share_pre_pct#i.post solar_share_pre_pct ///
-    temperature hdd cdd wind ln_sun precipitation precipitation_weekly precipitation_monthly ///
     i.day_of_week i.month, ///
     fe vce(cluster bzone_id)
 eststo did_levels
@@ -73,7 +72,6 @@ label var ln_solar_share "ln(solar_share + 1)"
 
 // Spec 2: ln(solar_share + 1) — semi-elasticity interpretation
 xtreg ln_solar_share c.gas_share_pre_pct#i.post solar_share_pre_pct ///
-    temperature hdd cdd wind ln_sun precipitation precipitation_weekly precipitation_monthly ///
     i.day_of_week i.month, ///
     fe vce(cluster bzone_id)
 eststo did_log
@@ -126,10 +124,11 @@ foreach k of local hy_pos_vals {
 // Two-way FE: bzone absorbed by xtreg fe, period absorbed by ib8.hy_seq_pos.
 // ib8 sets H2 2020 as the omitted base for both FE and interactions.
 xtreg solar_share `inter_vars' solar_share_pre_pct ///
-    temperature hdd cdd wind ln_sun precipitation precipitation_weekly precipitation_monthly ///
     i.day_of_week i.month ib8.hy_seq_pos, ///
     fe vce(cluster bzone_id)
 eststo event_solar
+
+/*     temperature hdd cdd wind ln_sun precipitation precipitation_weekly precipitation_monthly /// // excluded since weather does not affect solar growth */
 
 // =============================================================================
 // EVENT STUDY PLOT
