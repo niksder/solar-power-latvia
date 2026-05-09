@@ -190,7 +190,7 @@ preserve
         legend(off) ///
         xtitle("Half-year period") ///
         ytitle("Coef (% per pp of pre-war gas share)") ///
-        title("Effect of pre-war gas exposure on solar share growth") ///
+        title("Effect of pre-war gas exposure on solar share") ///
         subtitle("DiD event study; reference = H2 2020; red line = invasion Feb 24 2022") ///
         note("Two-way FE (bzone + date). Controls: sun, temperature, ln_precipitation." ///
              "SE clustered at bzone level (N = 14 bzones).", size(vsmall)) ///
@@ -228,7 +228,7 @@ preserve
         legend(off) ///
         xtitle("Half-year period") ///
         ytitle("Extra solar share (pp) vs. zero-gas-dependence counterfactual") ///
-        title("Latvia: solar growth attributable to pre-war gas dependence") ///
+        title("Latvia: solar share attributable to pre-war gas dependence") ///
         subtitle("DiD coefs × Latvia gas share (`lv_gas_fmt' pp); ref = H2 2020; red = invasion") ///
         note("Each point = estimated extra pp of solar share Latvia gained relative to a country with no pre-war gas." ///
              "Two-way FE (bzone + date). SE clustered at bzone level (N = 14 bzones).", size(vsmall)) ///
