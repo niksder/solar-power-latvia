@@ -132,15 +132,24 @@ foreach k of local hy_pos_vals {
         scalar _es_coef_`i'   = 0
         scalar _es_lb_`i'     = 0
         scalar _es_ub_`i'     = 0
+        scalar _es_lb90_`i'   = 0
+        scalar _es_ub90_`i'   = 0
     }
     else {
         scalar _es_period_`i' = `k' - 8
         scalar _es_coef_`i'   = _b[inter_hy`k']
-        scalar _es_lb_`i'     = _b[inter_hy`k'] - 1.96 * _se[inter_hy`k']
-        scalar _es_ub_`i'     = _b[inter_hy`k'] + 1.96 * _se[inter_hy`k']
+        scalar _es_lb_`i'     = _b[inter_hy`k'] - 1.96  * _se[inter_hy`k']
+        scalar _es_ub_`i'     = _b[inter_hy`k'] + 1.96  * _se[inter_hy`k']
+        scalar _es_lb90_`i'   = _b[inter_hy`k'] - 1.645 * _se[inter_hy`k']
+        scalar _es_ub90_`i'   = _b[inter_hy`k'] + 1.645 * _se[inter_hy`k']
     }
     local i = `i' + 1
 }
+
+// Extract Latvia's pre-war gas share (scalar survives preserve/restore)
+quietly summarize gas_share_pre_pct if bzone == "Latvia"
+scalar lv_gas_share_pre = r(mean)
+di "Latvia pre-war gas share (pp): " %5.2f lv_gas_share_pre
 
 preserve
     clear
@@ -149,18 +158,23 @@ preserve
     gen coef   = .
     gen lb95   = .
     gen ub95   = .
+    gen lb90   = .
+    gen ub90   = .
 
     forvalues i = 1/`nper' {
         replace period = _es_period_`i' in `i'
         replace coef   = _es_coef_`i'   in `i'
         replace lb95   = _es_lb_`i'     in `i'
         replace ub95   = _es_ub_`i'     in `i'
+        replace lb90   = _es_lb90_`i'   in `i'
+        replace ub90   = _es_ub90_`i'   in `i'
     }
 
     sort period
 
     twoway ///
-        (rcap lb95 ub95 period, lcolor(navy%50)) ///
+        (rcap lb95 ub95 period, lcolor(navy%30)) ///
+        (rcap lb90 ub90 period, lcolor(navy%55)) ///
         (connected coef period, ///
             mcolor(navy) lcolor(navy) msymbol(circle) lpattern(solid)), ///
         yline(0, lpattern(dash) lcolor(gray)) ///
@@ -182,6 +196,48 @@ preserve
         scheme(s2color)
 
     graph export "outputs/panel/solar_diff_and_diff/event_study_solar_production.png", ///
+        replace width(1400) height(900)
+
+    // -------------------------------------------------------------------------
+    // LATVIA-SPECIFIC EFFECT: coef × Latvia's pre-war gas share
+    // Interpretation: extra MWh of solar production Latvia gained (vs. counterfactual
+    // of zero gas dependence) relative to the H2 2020 reference period.
+    // -------------------------------------------------------------------------
+    local lv_gas = scalar(lv_gas_share_pre)
+    local lv_gas_fmt : di %5.1f `lv_gas'
+
+    forvalues i = 1/`nper' {
+        replace coef = _es_coef_`i'  * `lv_gas' in `i'
+        replace lb95 = _es_lb_`i'   * `lv_gas' in `i'
+        replace ub95 = _es_ub_`i'   * `lv_gas' in `i'
+        replace lb90 = _es_lb90_`i' * `lv_gas' in `i'
+        replace ub90 = _es_ub90_`i' * `lv_gas' in `i'
+    }
+
+    twoway ///
+        (rcap lb95 ub95 period, lcolor(maroon%30)) ///
+        (rcap lb90 ub90 period, lcolor(maroon%55)) ///
+        (connected coef period, ///
+            mcolor(maroon) lcolor(maroon) msymbol(circle) lpattern(solid)), ///
+        yline(0, lpattern(dash) lcolor(gray)) ///
+        xline(2.5, lpattern(dash) lcolor(red) lwidth(medthick)) ///
+        xlabel( ///
+            -7 "H1 2017" -6 "H2 2017" -5 "H1 2018" -4 "H2 2018" ///
+            -3 "H1 2019" -2 "H2 2019" -1 "H1 2020"  0 "H2 2020" ///
+             1 "H1 2021"  2 "H2 2021"  3 "H1 2022"  4 "H2 2022" ///
+             5 "H1 2023"  6 "H2 2023"  7 "H1 2024"  8 "H2 2024" ///
+             9 "H1 2025" 10 "H2 2025", ///
+            angle(45) labsize(small)) ///
+        legend(off) ///
+        xtitle("Half-year period") ///
+        ytitle("Extra solar production (MWh) vs. zero-gas-dependence counterfactual") ///
+        title("Latvia: solar production attributable to pre-war gas dependence") ///
+        subtitle("DiD coefs × Latvia gas share (`lv_gas_fmt' pp); ref = H2 2020; red = invasion") ///
+        note("Each point = estimated extra MWh of solar production Latvia gained relative to a country with no pre-war gas." ///
+             "Two-way FE (bzone + date). SE clustered at bzone level (N = 14 bzones).", size(vsmall)) ///
+        scheme(s2color)
+
+    graph export "outputs/panel/solar_diff_and_diff/event_study_latvia_effect_solar_production.png", ///
         replace width(1400) height(900)
 restore
 
