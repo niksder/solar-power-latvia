@@ -12,9 +12,11 @@ format date %td
 // Drop observations before 2017-01-01 and after 2026-01-01
 drop if date < td(01jan2017) | date >= td(01jan2026)
 
-//drop if bzone == "Austria" | bzone == "Romania" | bzone == "SE1" | bzone == "SE2" | bzone == "Germany" // Austria only used gas for 1 year, Romania missing solar data for 2024. SE_1 and SE_2 don't have solar either.
+// drop if bzone == "Germany" | bzone == "Croatia" | bzone == "SE1" | bzone == "SE2" | bzone == "SE3" | bzone == "SE4" // SE missing data till 2020, Germany and Croatia missing solar data for 2016 and 2017.
+// drop if bzone == "SE1" | bzone == "SE2" | bzone == "SE3" | bzone == "SE4" // SE missing data till 2020, Germany and Croatia missing solar data for 2016 and 2017.
 
-// Replace . in gas prices with last observed value (before collapse)
+// drop if bzone == "Germany" | bzone == "SE1" | bzone == "SE2" | bzone == "SE3" | bzone == "SE4" | bzone == "France" | bzone == "Croatia" | bzone == "Poland"
+
 //replace gas_price = gas_price[_n-1] if gas_price == .
 
 // Convert precipitation from m to mm (before collapse)
@@ -29,6 +31,7 @@ collapse ///
            total_generation precipitation ///
     (mean) energy_price gas_share solar_share gas_prod_yearly solar_prod_yearly solar_prod_growth solar_share_growth wind_u100 wind_v100 temperature sun wind ///
            precipitation_24h precipitation_weekly precipitation_monthly ///
+           policy0 policy1 ///
            year month week_of_year day_of_week, ///
     by(bzone date)
 

@@ -19,7 +19,7 @@ MERGED_PANEL_DATA_PATH = os.path.join(PANEL_DATA_DIR, 'merged_panel_data.csv')
 
 df = pd.read_csv(MERGED_PANEL_DATA_PATH, dtype={'bzone': 'category'})
 df['time'] = pd.to_datetime(df['time'], utc=True, format='mixed')
-df = df.drop(columns=['gas_share', 'solar_share', 'solar_prod_yearly', 'gas_prod_yearly', 'solar_prod_growth', 'solar_share_growth'], errors='ignore')
+df = df.drop(columns=['policy0', 'policy1', 'gas_share', 'solar_share', 'solar_prod_yearly', 'gas_prod_yearly', 'solar_prod_growth', 'solar_share_growth'], errors='ignore')
 df = df.dropna(subset=['time'])
 df = df.sort_values(['bzone', 'time']).reset_index(drop=True)
 
@@ -56,10 +56,14 @@ def _rolling_precipitation(group):
 
 df = df.groupby('bzone', group_keys=False).apply(_rolling_precipitation)
 df = df.sort_values(['bzone', 'time']).reset_index(drop=True)
+# Since april 1, 2020 — Latvia only
+is_latvia = df['bzone'] == 'Latvia'
+df['policy0'] = (is_latvia & (df['time'] >= '2020-04-01')).astype(int) # https://www.elektrum.lv/lv/majai/par-mums/jaunumi/likuma-izmainas-veicinas-saules-energijas-izmantosanu-latvija/
+df['policy1'] = (is_latvia & (df['time'].dt.year >= 2024)).astype(int) # https://www.kem.gov.lv/lv/jaunums/apstiprinats-regulejums-atlauju-sanemsanai-saules-veja-parku-uzkratuvju-vai-hibridprojektu-attistibai-latvija-0
 df['time'] = df['time'].dt.strftime('%Y-%m-%dT%H:%M:%SZ')
 
 df.to_csv(MERGED_PANEL_DATA_PATH, index=False)
-print(f'Added gas_share, solar_share, solar_prod_yearly, gas_prod_yearly, solar_prod_growth, solar_share_growth, and accumulated precipitation columns. Wrote {len(df)} rows to {MERGED_PANEL_DATA_PATH}')
+print(f'Added gas_share, solar_share, solar_prod_yearly, gas_prod_yearly, solar_prod_growth, solar_share_growth, accumulated precipitation, and policy1 columns. Wrote {len(df)} rows to {MERGED_PANEL_DATA_PATH}')
 
 del df
 gc.collect()
