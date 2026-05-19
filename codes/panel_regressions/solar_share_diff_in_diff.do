@@ -63,6 +63,7 @@ xtreg solar_share c.gas_share_pre_pct#i.post solar_share_pre_pct ///
     i.day_of_week i.month, ///
     fe vce(cluster bzone_id)
 eststo did_levels
+boottest c.gas_share_pre_pct#1.post, boottype(wild) cluster(bzone_id) reps(9999) seed(42) // Wild cluster bootstrap for robust inference with few clusters
 
 di "DiD coef (levels): " %9.3f _b[c.gas_share_pre_pct#1.post] ///
    "  SE: " %9.3f _se[c.gas_share_pre_pct#1.post]
@@ -75,6 +76,7 @@ xtreg ln_solar_share c.gas_share_pre_pct#i.post solar_share_pre_pct ///
     i.day_of_week i.month, ///
     fe vce(cluster bzone_id)
 eststo did_log
+boottest c.gas_share_pre_pct#1.post, boottype(wild) cluster(bzone_id) reps(9999) seed(42) // Wild cluster bootstrap for robust inference with few clusters
 
 di "DiD coef (log): " %9.4f _b[c.gas_share_pre_pct#1.post] ///
    "  SE: " %9.4f _se[c.gas_share_pre_pct#1.post]
@@ -124,7 +126,7 @@ foreach k of local hy_pos_vals {
 // Two-way FE: bzone absorbed by xtreg fe, period absorbed by ib8.hy_seq_pos.
 // ib8 sets H2 2020 as the omitted base for both FE and interactions.
 xtreg solar_share `inter_vars' solar_share_pre_pct ///
-    i.day_of_week i.month ib8.hy_seq_pos, ///
+    i.day_of_week ib8.hy_seq_pos, ///
     fe vce(cluster bzone_id)
 eststo event_solar
 
@@ -142,12 +144,19 @@ foreach k of local hy_pos_vals {
         scalar _es_coef_`i'   = 0
         scalar _es_lb_`i'     = 0
         scalar _es_ub_`i'     = 0
+        scalar _es_lb90_`i'   = 0
+        scalar _es_ub90_`i'   = 0
     }
     else {
         scalar _es_period_`i' = `k' - 8
         scalar _es_coef_`i'   = _b[inter_hy`k']
-        scalar _es_lb_`i'     = _b[inter_hy`k'] - 1.96 * _se[inter_hy`k']
-        scalar _es_ub_`i'     = _b[inter_hy`k'] + 1.96 * _se[inter_hy`k']
+        // Wild cluster bootstrap CIs (Roodman et al.; same seed → reproducible)
+        quietly boottest inter_hy`k', boottype(wild) cluster(bzone_id) reps(9999) seed(42) level(95) // Wild cluster bootstrap for robust inference with few clusters
+        scalar _es_lb_`i'     = r(CI)[1,1]
+        scalar _es_ub_`i'     = r(CI)[1,2]
+        quietly boottest inter_hy`k', boottype(wild) cluster(bzone_id) reps(9999) seed(42) level(90)
+        scalar _es_lb90_`i'   = r(CI)[1,1]
+        scalar _es_ub90_`i'   = r(CI)[1,2]
     }
     local i = `i' + 1
 }
@@ -164,18 +173,23 @@ preserve
     gen coef   = .
     gen lb95   = .
     gen ub95   = .
+    gen lb90   = .
+    gen ub90   = .
 
     forvalues i = 1/`nper' {
         replace period = _es_period_`i' in `i'
         replace coef   = _es_coef_`i'   in `i'
         replace lb95   = _es_lb_`i'     in `i'
         replace ub95   = _es_ub_`i'     in `i'
+        replace lb90   = _es_lb90_`i'   in `i'
+        replace ub90   = _es_ub90_`i'   in `i'
     }
 
     sort period
 
     twoway ///
-        (rcap lb95 ub95 period, lcolor(navy%50)) ///
+        (rcap lb95 ub95 period, lcolor(navy%30)) ///
+        (rcap lb90 ub90 period, lcolor(navy%55)) ///
         (connected coef period, ///
             mcolor(navy) lcolor(navy) msymbol(circle) lpattern(solid)), ///
         yline(0, lpattern(dash) lcolor(gray)) ///
@@ -207,13 +221,16 @@ preserve
     local lv_gas_fmt : di %5.1f `lv_gas'
 
     forvalues i = 1/`nper' {
-        replace coef = _es_coef_`i' * `lv_gas' in `i'
-        replace lb95 = _es_lb_`i'  * `lv_gas' in `i'
-        replace ub95 = _es_ub_`i'  * `lv_gas' in `i'
+        replace coef = _es_coef_`i'   * `lv_gas' in `i'
+        replace lb95 = _es_lb_`i'    * `lv_gas' in `i'
+        replace ub95 = _es_ub_`i'    * `lv_gas' in `i'
+        replace lb90 = _es_lb90_`i'  * `lv_gas' in `i'
+        replace ub90 = _es_ub90_`i'  * `lv_gas' in `i'
     }
 
     twoway ///
-        (rcap lb95 ub95 period, lcolor(maroon%50)) ///
+        (rcap lb95 ub95 period, lcolor(maroon%30)) ///
+        (rcap lb90 ub90 period, lcolor(maroon%55)) ///
         (connected coef period, ///
             mcolor(maroon) lcolor(maroon) msymbol(circle) lpattern(solid)), ///
         yline(0, lpattern(dash) lcolor(gray)) ///
