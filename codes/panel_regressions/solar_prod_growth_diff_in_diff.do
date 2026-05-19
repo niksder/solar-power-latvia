@@ -41,6 +41,20 @@ label var ln_solar "ln(solar_prod_yearly + 1)"
 gen d_ln_solar = D.ln_solar
 label var d_ln_solar "Daily log-diff of ln(solar_prod_yearly+1)"
 
+// Drop first year of growth for bzones whose solar data appears after the
+// dataset start — the rolling 365-day sum isn't a full year yet, so the
+// log differences reflect data appearance, not real growth.
+gen     _first_solar = date if solar_prod_yearly > 0 & !missing(solar_prod_yearly)
+bysort bzone_id: egen _solar_start = min(_first_solar)
+drop _first_solar
+format _solar_start %td
+
+quietly summarize date
+scalar _dataset_start = r(min)
+
+replace d_ln_solar = . if (_solar_start > _dataset_start) & (date <= _solar_start + 365)
+drop _solar_start
+
 // =============================================================================
 // MAIN DiD REGRESSIONS
 //   Y_it = α_i + γ_t + β*(gas_share_pre_pct_i × post_t) + weather + ε_it
