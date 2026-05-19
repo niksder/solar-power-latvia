@@ -196,7 +196,7 @@ preserve
              "SE clustered at bzone level (N = 14 bzones).", size(vsmall)) ///
         scheme(s2color)
 
-    graph export "outputs/panel/solar_diff_and_diff/event_study_solar_share.png", ///
+    graph export "outputs/panel/solar_diff_and_diff/event_study_solar_growth.png", ///
         replace width(1400) height(900)
     // -------------------------------------------------------------------------
     // LATVIA-SPECIFIC EFFECT: coef × Latvia's pre-war gas share
@@ -234,7 +234,7 @@ preserve
              "Two-way FE (bzone + date). SE clustered at bzone level (N = 14 bzones).", size(vsmall)) ///
         scheme(s2color)
 
-    graph export "outputs/panel/solar_diff_and_diff/event_study_latvia_effect.png", ///
+    graph export "outputs/panel/solar_diff_and_diff/event_study_latvia_effect_solar_growth.png", ///
         replace width(1400) height(900)
 restore
 
