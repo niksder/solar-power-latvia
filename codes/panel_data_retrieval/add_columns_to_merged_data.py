@@ -1,10 +1,7 @@
 import gc
 import os
-import math
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import matplotlib.ticker as mticker
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -67,72 +64,3 @@ print(f'Added gas_share, solar_share, solar_prod_yearly, gas_prod_yearly, solar_
 
 del df
 gc.collect()
-
-plot_df = pd.read_csv(MERGED_PANEL_DATA_PATH, usecols=['bzone', 'time', 'gas_share', 'solar_share'], dtype={'bzone': 'category'})
-plot_df['time'] = pd.to_datetime(plot_df['time'], utc=True, format='mixed')
-plot_df = plot_df[plot_df['time'] >= '2017-01-01']
-
-# --- Plot rolling gas share ---
-ZONE_COLORS = {
-    'Austria':     '#d62728',
-    'Croatia':     '#ff7f0e',
-    'Czechia':     '#2ca02c',
-    'Finland':     '#9467bd',
-    'France':      '#8c564b',
-    'Latvia':      '#e377c2',
-    'Poland':      '#7f7f7f',
-    'Romania':     '#bcbd22',
-    'SE1':         '#08519c',
-    'SE2':         '#2171b5',
-    'SE3':         '#6baed6',
-    'SE4':         '#c6dbef',
-    'Slovenia':    '#00a86b',
-    'Switzerland': '#e8a838',
-    'Belgium':    '#e40b82',
-    'Germany':    '#520d72',
-    'Slovakia':   '#086161',
-}
-
-fig, ax = plt.subplots(figsize=(13, 6))
-for bzone, group in plot_df.groupby('bzone'):
-    group = group.set_index('time').sort_index()
-    daily = group['gas_share'].resample('D').mean()
-    ax.plot(daily.index, daily.values * 100, linewidth=1.2, label=bzone,
-            color=ZONE_COLORS.get(bzone))
-
-ax.set_title('Rolling 365-day gas share of total electricity production')
-ax.set_xlabel('Date')
-ax.set_ylabel('Gas share (%)')
-ax.yaxis.set_major_formatter(mticker.FormatStrFormatter('%.1f%%'))
-ax.legend(bbox_to_anchor=(1.01, 1), loc='upper left', fontsize=8, frameon=False)
-ax.grid(axis='y', linestyle='--', alpha=0.5)
-fig.tight_layout()
-
-plot_path = os.path.join(OUTPUTS_DIR, 'panel', 'others', 'rolling_gas_share.png')
-os.makedirs(os.path.dirname(plot_path), exist_ok=True)
-fig.savefig(plot_path, dpi=150)
-print(f'Plot saved to {plot_path}')
-plt.show()
-plt.close(fig)
-
-# --- Plot rolling solar share ---
-fig2, ax2 = plt.subplots(figsize=(13, 6))
-for bzone, group in plot_df.groupby('bzone'):
-    group = group.set_index('time').sort_index()
-    daily = group['solar_share'].resample('D').mean()
-    ax2.plot(daily.index, daily.values * 100, linewidth=1.2, label=bzone,
-             color=ZONE_COLORS.get(bzone))
-
-ax2.set_title('Rolling 365-day solar share of total electricity production')
-ax2.set_xlabel('Date')
-ax2.set_ylabel('Solar share (%)')
-ax2.yaxis.set_major_formatter(mticker.FormatStrFormatter('%.1f%%'))
-ax2.legend(bbox_to_anchor=(1.01, 1), loc='upper left', fontsize=8, frameon=False)
-ax2.grid(axis='y', linestyle='--', alpha=0.5)
-fig2.tight_layout()
-
-plot_path2 = os.path.join(OUTPUTS_DIR, 'panel', 'others', 'rolling_solar_share.png')
-fig2.savefig(plot_path2, dpi=150)
-print(f'Plot saved to {plot_path2}')
-plt.show()
-plt.close(fig2)
