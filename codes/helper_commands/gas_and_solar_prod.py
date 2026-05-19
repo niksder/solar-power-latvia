@@ -119,15 +119,17 @@ ax.grid(axis='y', linestyle='--', alpha=0.5)
 fig.tight_layout()
 _save(fig, 'rolling_solar_production_log.png')
 
+dataset_start = plot_df['time'].min()
+
 # --- Gas production growth rate (log difference) ---
 fig, ax = plt.subplots(figsize=(13, 6))
 for bzone, group in plot_df.groupby('bzone'):
     group = group.set_index('time').sort_index()
     daily = group['gas_prod_yearly'].resample('D').mean()
     log_diff = np.log(daily.replace(0, float('nan'))).diff()
-    first_valid = log_diff.first_valid_index()
-    if first_valid is not None:
-        log_diff.loc[first_valid] = float('nan')
+    first_data = daily[daily > 0].index.min()
+    if pd.notna(first_data) and first_data > dataset_start:
+        log_diff.loc[first_data:first_data + pd.Timedelta(days=365)] = float('nan')
     ax.plot(log_diff.index, log_diff.values, linewidth=1.0, label=bzone,
             color=ZONE_COLORS.get(bzone))
 ax.axhline(0, color='black', linewidth=0.8, linestyle='--')
@@ -145,9 +147,9 @@ for bzone, group in plot_df.groupby('bzone'):
     group = group.set_index('time').sort_index()
     daily = group['solar_prod_yearly'].resample('D').mean()
     log_diff = np.log(daily.replace(0, float('nan'))).diff()
-    first_valid = log_diff.first_valid_index()
-    if first_valid is not None:
-        log_diff.loc[first_valid] = float('nan')
+    first_data = daily[daily > 0].index.min()
+    if pd.notna(first_data) and first_data > dataset_start:
+        log_diff.loc[first_data:first_data + pd.Timedelta(days=365)] = float('nan')
     ax.plot(log_diff.index, log_diff.values, linewidth=1.0, label=bzone,
             color=ZONE_COLORS.get(bzone))
 ax.axhline(0, color='black', linewidth=0.8, linestyle='--')
