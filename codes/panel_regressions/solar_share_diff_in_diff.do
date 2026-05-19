@@ -251,7 +251,7 @@ preserve
              "Two-way FE (bzone + date). SE clustered at bzone level (N = 14 bzones).", size(vsmall)) ///
         scheme(s2color)
 
-    graph export "outputs/panel/solar_diff_and_diff/event_study_latvia_effect.png", ///
+    graph export "outputs/panel/solar_diff_and_diff/event_study_latvia_effect_solar_share.png", ///
         replace width(1400) height(900)
 restore
 
