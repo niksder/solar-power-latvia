@@ -130,10 +130,11 @@ for bzone, group in plot_df.groupby('bzone'):
     first_data = daily[daily > 0].index.min()
     if pd.notna(first_data) and first_data > dataset_start:
         log_diff.loc[first_data:first_data + pd.Timedelta(days=365)] = float('nan')
-    ax.plot(log_diff.index, log_diff.values, linewidth=1.0, label=bzone,
+    monthly = log_diff.resample('ME').mean()
+    ax.plot(monthly.index, monthly.values, linewidth=1.0, label=bzone,
             color=ZONE_COLORS.get(bzone))
 ax.axhline(0, color='black', linewidth=0.8, linestyle='--')
-ax.set_title('Gas production growth rate (log difference of rolling 365-day production)')
+ax.set_title('Gas production growth rate (monthly avg log difference of rolling 365-day production)')
 ax.set_xlabel('Date')
 ax.set_ylabel('Log difference')
 ax.legend(bbox_to_anchor=(1.01, 1), loc='upper left', fontsize=8, frameon=False)
@@ -150,10 +151,11 @@ for bzone, group in plot_df.groupby('bzone'):
     first_data = daily[daily > 0].index.min()
     if pd.notna(first_data) and first_data > dataset_start:
         log_diff.loc[first_data:first_data + pd.Timedelta(days=365)] = float('nan')
-    ax.plot(log_diff.index, log_diff.values, linewidth=1.0, label=bzone,
+    monthly = log_diff.resample('ME').mean()
+    ax.plot(monthly.index, monthly.values, linewidth=1.0, label=bzone,
             color=ZONE_COLORS.get(bzone))
 ax.axhline(0, color='black', linewidth=0.8, linestyle='--')
-ax.set_title('Solar production growth rate (log difference of rolling 365-day production)')
+ax.set_title('Solar production growth rate (monthly avg log difference of rolling 365-day production)')
 ax.set_xlabel('Date')
 ax.set_ylabel('Log difference')
 ax.legend(bbox_to_anchor=(1.01, 1), loc='upper left', fontsize=8, frameon=False)
