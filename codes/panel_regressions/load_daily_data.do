@@ -13,7 +13,7 @@ format date %td
 drop if date < td(01jan2017) | date >= td(01jan2026)
 
 // drop if bzone == "Germany" | bzone == "Croatia" | bzone == "SE1" | bzone == "SE2" | bzone == "SE3" | bzone == "SE4" // SE missing data till 2020, Germany and Croatia missing solar data for 2016 and 2017.
-// drop if bzone == "SE1" | bzone == "SE2" | bzone == "SE3" | bzone == "SE4" // SE missing data till 2020, Germany and Croatia missing solar data for 2016 and 2017.
+// drop if bzone == "SE1" | bzone == "SE2" | bzone == "SE3" | bzone == "SE4" // SE missing data till 2020
 
 // drop if bzone == "Germany" | bzone == "SE1" | bzone == "SE2" | bzone == "SE3" | bzone == "SE4" | bzone == "France" | bzone == "Croatia" | bzone == "Poland"
 
@@ -32,6 +32,7 @@ collapse ///
     (mean) energy_price gas_share solar_share gas_prod_yearly solar_prod_yearly solar_prod_growth solar_share_growth wind_u100 wind_v100 temperature sun wind ///
            precipitation_24h precipitation_weekly precipitation_monthly ///
            policy0 policy1 ///
+           population_density gdp_pps ///
            year month week_of_year day_of_week, ///
     by(bzone date)
 

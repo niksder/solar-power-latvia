@@ -6,9 +6,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 PANEL_DATA_DIR = os.getenv('PANEL_DATA_DIR')
+DATA_DIR = os.getenv('DATA_DIR')
 
-_DEFAULT_DATA_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'data'))
-ENB_SOLAR_FILE = os.path.join(_DEFAULT_DATA_DIR, 'constants', 'ENB010m_20260429-171145.csv')
+CONSTANTS_DIR = os.path.join(DATA_DIR, os.getenv('CONSTANTS_DIR', 'constants'))
+ENB_SOLAR_FILE = os.path.join(CONSTANTS_DIR, 'ENB010m_20260429-171145.csv')
+EUROSTAT_GDP_PPS_FILE = os.path.join(CONSTANTS_DIR, 'tec00114_linear_2_0.csv') # https://ec.europa.eu/eurostat/databrowser/explore/all/t_economy?sort=category&lang=en&subtheme=t_na10.t_nama10.t_nama_10_ma&display=list
+EUROSTAT_POPULATION_DENSITY_FILE = os.path.join(CONSTANTS_DIR, 'tps00003_linear_2_0.csv') # https://ec.europa.eu/eurostat/databrowser/view/tps00003/default/table
 ENERGY_PRICES_DIR = os.getenv('ENERGY_PRICES_DIR')
 ENERGY_SOURCES_DIR = os.getenv('ENERGY_SOURCES_DIR')
 TOTAL_PRODUCTION_DIR = os.getenv('TOTAL_PRODUCTION_DIR', 'total_production')
@@ -25,6 +28,17 @@ COLUMN_TRANSLATIONS = {
     'weather_ssrd': 'sun',
     'weather_tp': 'precipitation',
 }
+
+
+def _load_eurostat_annual(filepath, value_col_name):
+    """Load a Eurostat linear-format annual CSV and return a (geo, year, value) DataFrame."""
+    df = pd.read_csv(filepath)
+    df = df[['geo', 'TIME_PERIOD', 'OBS_VALUE']].copy()
+    df = df.rename(columns={'TIME_PERIOD': 'year', 'OBS_VALUE': value_col_name})
+    df['year'] = pd.to_numeric(df['year'], errors='coerce').astype('Int64')
+    df[value_col_name] = pd.to_numeric(df[value_col_name], errors='coerce')
+    df = df.dropna(subset=['geo', 'year']).drop_duplicates(subset=['geo', 'year'])
+    return df
 
 
 def _resample_to_hourly(df):
@@ -112,6 +126,8 @@ def _load_zone(zone):
     df['hour'] = dt.dt.hour
 
     df.insert(0, 'bzone', zone['name'])
+    geo_code = zone['geojson'].replace('.geojson', '').split('_')[0]
+    df.insert(1, 'country_code', geo_code)
 
     return df
 
@@ -212,6 +228,22 @@ def merge_panel(bidding_zones):
 
     panel = pd.concat(frames, ignore_index=True)
     panel = panel.sort_values(['bzone', 'time']).reset_index(drop=True)
+
+    if os.path.exists(EUROSTAT_GDP_PPS_FILE):
+        gdp_pps = _load_eurostat_annual(EUROSTAT_GDP_PPS_FILE, 'gdp_pps')
+        panel['year'] = panel['year'].astype('Int64')
+        panel = panel.merge(gdp_pps, left_on=['country_code', 'year'], right_on=['geo', 'year'], how='left')
+        panel = panel.drop(columns=['geo'])
+    else:
+        print(f'GDP PPS file not found, skipping: {EUROSTAT_GDP_PPS_FILE}')
+
+    if os.path.exists(EUROSTAT_POPULATION_DENSITY_FILE):
+        pop_density = _load_eurostat_annual(EUROSTAT_POPULATION_DENSITY_FILE, 'population_density')
+        panel['year'] = panel['year'].astype('Int64')
+        panel = panel.merge(pop_density, left_on=['country_code', 'year'], right_on=['geo', 'year'], how='left')
+        panel = panel.drop(columns=['geo'])
+    else:
+        print(f'Population density file not found, skipping: {EUROSTAT_POPULATION_DENSITY_FILE}')
 
     panel.to_csv(output_path, index=False)
     print(f'Wrote {len(panel)} rows ({len(frames)} zones) to {output_path}')

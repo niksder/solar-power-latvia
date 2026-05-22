@@ -118,7 +118,7 @@ program define synth_did
     // ---------------------------------------------------------------
     // Step 1: Half-year aggregation for synth
     // ---------------------------------------------------------------
-    collapse (mean) gas_share solar_share ln_solar_share temperature sun precipitation, ///
+    collapse (mean) gas_share solar_share energy_price ln_solar_share temperature sun precipitation population_density gdp_pps, ///
         by(bzone_id hy_seq_pos)
 
     // Drop donors with any missing solar_share in pre-treatment window
@@ -128,12 +128,16 @@ program define synth_did
 
     xtset bzone_id hy_seq_pos
 
+    // Scale up GPP PPS for it to have bigger weight in the synth matching
+    replace gdp_pps = gdp_pps * 1000
+
     // ---------------------------------------------------------------
     // Step 2: Run synth
     // ---------------------------------------------------------------
     synth solar_share ///
-        solar_share(1(1)`pre_end') ///
-        temperature(1(1)`pre_end') sun(1(1)`pre_end') precipitation(1(1)`pre_end'), ///
+        solar_share(1(1)`pre_end') energy_price(1(1)`pre_end') ///
+        population_density(1(1)`pre_end') gdp_pps(1(1)`pre_end') ///
+        /*temperature(1(1)`pre_end')*/ sun(1(1)`pre_end') /*precipitation(1(1)`pre_end')*/, ///
         trunit(`lv_id') trperiod(`trperiod_pos') ///
         nested allopt
 
