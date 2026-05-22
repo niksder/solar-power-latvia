@@ -12,7 +12,7 @@ cap mkdir "outputs/panel/solar_diff_and_diff"
 // =============================================================================
 
 // Pre-war gas share: value on Feb 23 2022 (fixed treatment intensity per bzone)
-gen _tmp = gas_share if date == td(23feb2022)
+gen _tmp = gas_share if date == td(23feb2021)
 bysort bzone_id: egen gas_share_pre = max(_tmp)
 drop _tmp
 label var gas_share_pre "Gas share on Feb 23 2022 (pre-war, 0–1)"
@@ -59,8 +59,8 @@ label var post "Post-invasion dummy (>= Feb 24 2022)"
 // =============================================================================
 
 // Spec 1: solar share
-xtreg solar_share c.gas_share_pre_pct#i.post solar_share_pre_pct ///
-    i.day_of_week i.month, ///
+xtreg solar_share c.gas_share_pre_pct#i.post /*solar_share_pre_pct*/ ///
+    /*i.day_of_week*/ i.month, ///
     fe vce(cluster bzone_id)
 eststo did_levels
 boottest c.gas_share_pre_pct#1.post, boottype(wild) cluster(bzone_id) reps(9999) seed(42) // Wild cluster bootstrap for robust inference with few clusters
@@ -72,8 +72,8 @@ gen ln_solar_share = ln(solar_share + 1)
 label var ln_solar_share "ln(solar_share + 1)"
 
 // Spec 2: ln(solar_share + 1) — semi-elasticity interpretation
-xtreg ln_solar_share c.gas_share_pre_pct#i.post solar_share_pre_pct ///
-    i.day_of_week i.month, ///
+xtreg ln_solar_share c.gas_share_pre_pct#i.post /*solar_share_pre_pct*/ ///
+    /*i.day_of_week*/ i.month, ///
     fe vce(cluster bzone_id)
 eststo did_log
 boottest c.gas_share_pre_pct#1.post, boottype(wild) cluster(bzone_id) reps(9999) seed(42) // Wild cluster bootstrap for robust inference with few clusters
@@ -125,8 +125,8 @@ foreach k of local hy_pos_vals {
 
 // Two-way FE: bzone absorbed by xtreg fe, period absorbed by ib8.hy_seq_pos.
 // ib8 sets H2 2020 as the omitted base for both FE and interactions.
-xtreg solar_share `inter_vars' solar_share_pre_pct ///
-    i.day_of_week ib8.hy_seq_pos, ///
+xtreg solar_share `inter_vars' /*solar_share_pre_pct*/ ///
+    /*i.day_of_week*/ i.month ib8.hy_seq_pos, ///
     fe vce(cluster bzone_id)
 eststo event_solar
 
