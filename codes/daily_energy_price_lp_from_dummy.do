@@ -65,7 +65,8 @@ twoway ///
     (line cum_lower h, lpattern(dash) lcolor(gray)), ///
     yline(0) ///
     xtitle("Days after war started (24 Feb 2022)") ///
-    ytitle("Cumulative response of electricity price")
+    ytitle("Cumulative response of electricity price") ///
+    legend(order(1 "Cumulative IRF" 2 "Upper 95% CI" 3 "Lower 95% CI") pos(6) ring(0))
 
 // Save the plot
 graph export "outputs/daily_energy_price_lp_war_dummy/daily_cumulative_irf_war_dummy.png", replace
