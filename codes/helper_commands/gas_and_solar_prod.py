@@ -25,7 +25,7 @@ ZONE_COLORS = {
     'Czechia':     '#2ca02c',
     'Finland':     '#9467bd',
     'France':      '#8c564b',
-    'Latvia':      '#e377c2',
+    'Latvia':      '#000000',
     'Poland':      '#7f7f7f',
     'Romania':     '#bcbd22',
     'SE1':         '#08519c',
@@ -56,7 +56,7 @@ fig, ax = plt.subplots(figsize=(13, 6))
 for bzone, group in plot_df.groupby('bzone'):
     group = group.set_index('time').sort_index()
     daily = group['gas_share'].resample('D').mean()
-    ax.plot(daily.index, daily.values * 100, linewidth=1.2, label=bzone,
+    ax.plot(daily.index, daily.values * 100, linewidth=2.5 if bzone == 'Latvia' else 1.2, label=bzone,
             color=ZONE_COLORS.get(bzone))
 ax.set_title('Rolling 365-day gas share of total electricity production')
 ax.set_xlabel('Date')
@@ -72,7 +72,7 @@ fig, ax = plt.subplots(figsize=(13, 6))
 for bzone, group in plot_df.groupby('bzone'):
     group = group.set_index('time').sort_index()
     daily = group['solar_share'].resample('D').mean()
-    ax.plot(daily.index, daily.values * 100, linewidth=1.2, label=bzone,
+    ax.plot(daily.index, daily.values * 100, linewidth=2.5 if bzone == 'Latvia' else 1.2, label=bzone,
             color=ZONE_COLORS.get(bzone))
 ax.set_title('Rolling 365-day solar share of total electricity production')
 ax.set_xlabel('Date')
@@ -89,7 +89,7 @@ for bzone, group in plot_df.groupby('bzone'):
     group = group.set_index('time').sort_index()
     daily = group['gas_prod_yearly'].resample('D').mean()
     daily = daily[daily > 0]
-    ax.plot(daily.index, daily.values, linewidth=1.2, label=bzone,
+    ax.plot(daily.index, daily.values, linewidth=2.5 if bzone == 'Latvia' else 1.2, label=bzone,
             color=ZONE_COLORS.get(bzone))
 ax.set_yscale('log')
 ax.set_title('Rolling 365-day gas production (log scale)')
@@ -107,7 +107,7 @@ for bzone, group in plot_df.groupby('bzone'):
     group = group.set_index('time').sort_index()
     daily = group['solar_prod_yearly'].resample('D').mean()
     daily = daily[daily > 0]
-    ax.plot(daily.index, daily.values, linewidth=1.2, label=bzone,
+    ax.plot(daily.index, daily.values, linewidth=2.5 if bzone == 'Latvia' else 1.2, label=bzone,
             color=ZONE_COLORS.get(bzone))
 ax.set_yscale('log')
 ax.set_title('Rolling 365-day solar production (log scale)')
@@ -131,7 +131,7 @@ for bzone, group in plot_df.groupby('bzone'):
     if pd.notna(first_data) and first_data > dataset_start:
         log_diff.loc[first_data:first_data + pd.Timedelta(days=365)] = float('nan')
     monthly = log_diff.resample('ME').mean()
-    ax.plot(monthly.index, monthly.values, linewidth=1.0, label=bzone,
+    ax.plot(monthly.index, monthly.values, linewidth=2.5 if bzone == 'Latvia' else 1.0, label=bzone,
             color=ZONE_COLORS.get(bzone))
 ax.axhline(0, color='black', linewidth=0.8, linestyle='--')
 ax.set_title('Gas production growth rate (monthly avg log difference of rolling 365-day production)')
@@ -152,7 +152,7 @@ for bzone, group in plot_df.groupby('bzone'):
     if pd.notna(first_data) and first_data > dataset_start:
         log_diff.loc[first_data:first_data + pd.Timedelta(days=365)] = float('nan')
     monthly = log_diff.resample('ME').mean()
-    ax.plot(monthly.index, monthly.values, linewidth=1.0, label=bzone,
+    ax.plot(monthly.index, monthly.values, linewidth=2.5 if bzone == 'Latvia' else 1.0, label=bzone,
             color=ZONE_COLORS.get(bzone))
 ax.axhline(0, color='black', linewidth=0.8, linestyle='--')
 ax.set_title('Solar production growth rate (monthly avg log difference of rolling 365-day production)')
