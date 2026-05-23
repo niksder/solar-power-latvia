@@ -7,6 +7,7 @@ from merge_panel import merge_panel
 # A table with bidding zone codes, names, countries, geojson filenames
 
 # https://github.com/datons/python-entsoe/blob/main/src/entsoe/_mappings.py
+# https://github.com/EnergieID/entsoe-py/tree/master/entsoe/geo/geojson
 
 BIDDING_ZONES = [
     {
@@ -110,6 +111,24 @@ BIDDING_ZONES = [
         "name": "Germany",
         "countries": ["Germany", "Luxembourg"],
         "geojson": "DE_LU.geojson",
+    },
+    {
+        "code": "10YCA-BULGARIA-R",
+        "name": "Bulgaria",
+        "countries": ["Bulgaria"],
+        "geojson": "BG.geojson",
+    },
+    {
+        "code": "10Y1001A1001A39I",
+        "name": "Estonia",
+        "countries": ["Estonia"],
+        "geojson": "EE.geojson",
+    },
+    {
+        "code": "10YLT-1001A0008Q",
+        "name": "Lithuania",
+        "countries": ["Lithuania"],
+        "geojson": "LT.geojson",
     }
 ]
 

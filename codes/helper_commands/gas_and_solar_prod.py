@@ -37,6 +37,9 @@ ZONE_COLORS = {
     'Belgium':     '#e40b82',
     'Germany':     '#520d72',
     'Slovakia':    '#086161',
+    'Bulgaria':    '#ff69b4',
+    'Lithuania':   '#ff4500',
+    'Estonia':     "#20cca1",
 }
 
 OUT_DIR = os.path.join(OUTPUTS_DIR, 'panel', 'others')
