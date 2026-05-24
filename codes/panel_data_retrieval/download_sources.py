@@ -15,7 +15,8 @@ SLEEP_TIME = float(os.getenv('SLEEP_TIME', 0.3))
 
 NS = 'urn:iec62325.351:tc57wg16:451-6:generationloaddocument:3:0'
 YEARS = range(2016, 2026) # exclude 2026 since it's not complete yet
-PSR_TYPES = ['B04', 'B16']
+PSR_TYPES = ['B02', 'B03', 'B04', 'B05', 'B06', 'B07', 'B08', 'B10', 'B11', 'B12', 'B16', 'B18', 'B19']
+# [O] B01 = Biomass; B02 = Fossil Brown coal/Lignite; B03 = Fossil Coal-derived gas; B04 = Fossil Gas; B05 = Fossil Hard coal; B06 = Fossil Oil; B07 = Fossil Oil shale; B08 = Fossil Peat; B09 = Geothermal; B10 = Hydro Pumped Storage; B11 = Hydro Run-of-river and poundage; B12 = Hydro Water Reservoir; B13 = Marine; B14 = Nuclear; B15 = Other renewable; B16 = Solar; B17 = Waste; B18 = Wind Offshore; B19 = Wind Onshore; B20 = Other; B25 = Energy storage
 
 
 def _download_zone_year_psr(zone, year, psr_type):
@@ -238,12 +239,24 @@ def _parse_zone_year_psr(zone, year, psr_type):
     return result
 
 
+def _get_existing_psr_types(output_path):
+    """Return the set of PSR type columns already present in the CSV, or empty set if file doesn't exist."""
+    if not os.path.exists(output_path):
+        return set()
+    with open(output_path, 'r', newline='') as f:
+        reader = csv.reader(f)
+        header = next(reader, [])
+    return set(col for col in header if col != 'time')
+
+
 def download_sources(zone, years=YEARS, psr_types=PSR_TYPES):
     """Download and convert energy generation by source for one bidding zone.
 
     Downloads raw ENTSO-E XML files for each year and PSR type in ``years`` /
     ``psr_types``, parses them, deletes the XML files, and writes a single
     hourly CSV to ``{DATA_DIR}/{ENERGY_SOURCES_DIR}/energy_sources_{zone_name}.csv``.
+    If the CSV already exists, only PSR types not yet present as columns are
+    downloaded and merged in.
 
     Parameters
     ----------
@@ -260,31 +273,35 @@ def download_sources(zone, years=YEARS, psr_types=PSR_TYPES):
     output_path = os.path.join(DATA_DIR, ENERGY_SOURCES_DIR, f'energy_sources_{zone["name"]}.csv')
     total_output_path = os.path.join(DATA_DIR, TOTAL_PRODUCTION_DIR, f'total_production_{zone["name"]}.csv')
 
-    sources_exists = os.path.exists(output_path)
+    existing_psr_types = _get_existing_psr_types(output_path)
+    missing_psr_types = [p for p in psr_types if p not in existing_psr_types]
+    sources_complete = os.path.exists(output_path) and not missing_psr_types
     total_exists = os.path.exists(total_output_path)
 
-    if sources_exists:
-        print(f'Skipping energy sources for {zone["name"]} (already exists)')
+    if sources_complete:
+        print(f'Skipping energy sources for {zone["name"]} (already exists with all PSR types)')
+    elif existing_psr_types:
+        print(f'Energy sources for {zone["name"]} exists but missing PSR types: {missing_psr_types}')
     if total_exists:
         print(f'Skipping total production for {zone["name"]} (already exists)')
-    if sources_exists and total_exists:
+    if sources_complete and total_exists:
         return
 
     for year in years:
-        if not sources_exists:
-            for psr_type in psr_types:
+        if not sources_complete:
+            for psr_type in missing_psr_types:
                 sleep(SLEEP_TIME)
                 _download_zone_year_psr(zone, year, psr_type)
         if not total_exists:
             sleep(SLEEP_TIME)
             _download_zone_year_total(zone, year)
 
-    # data[time_str][psr_type] = quantity
-    data = {}
+    # new_data[time_str][psr_type] = quantity  (only for missing PSR types)
+    new_data = {}
     total_data = {}
     for year in years:
-        if not sources_exists:
-            for psr_type in psr_types:
+        if not sources_complete:
+            for psr_type in missing_psr_types:
                 xml_path = os.path.join(
                     DATA_DIR, ENERGY_SOURCES_DIR,
                     f'energy_sources_{zone["name"]}_{year}_{psr_type}.xml'
@@ -299,9 +316,9 @@ def download_sources(zone, years=YEARS, psr_types=PSR_TYPES):
                         os.remove(xml_path)
 
                 for time_str, qty in parsed.items():
-                    if time_str not in data:
-                        data[time_str] = {}
-                    data[time_str][psr_type] = qty
+                    if time_str not in new_data:
+                        new_data[time_str] = {}
+                    new_data[time_str][psr_type] = qty
 
         if not total_exists:
             total_xml_path = os.path.join(
@@ -320,15 +337,39 @@ def download_sources(zone, years=YEARS, psr_types=PSR_TYPES):
             for time_str, qty in parsed_total.items():
                 total_data[time_str] = qty
 
-    if not sources_exists:
-        all_times = sorted(data.keys())
-        with open(output_path, 'w', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerow(['time'] + list(psr_types))
-            for t in all_times:
-                row = [t] + [data[t].get(psr, '') for psr in psr_types]
-                writer.writerow(row)
-        print(f'Wrote {len(all_times)} rows to {output_path}')
+    if not sources_complete:
+        if existing_psr_types:
+            # Read existing CSV and merge new PSR type columns in
+            existing_data = {}
+            existing_header = []
+            with open(output_path, 'r', newline='') as f:
+                reader = csv.reader(f)
+                existing_header = next(reader)
+                for row in reader:
+                    existing_data[row[0]] = dict(zip(existing_header, row))
+
+            existing_psr_cols = existing_header[1:]
+            all_times = sorted(set(existing_data.keys()) | set(new_data.keys()))
+            with open(output_path, 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(['time'] + existing_psr_cols + missing_psr_types)
+                for t in all_times:
+                    row = [t]
+                    for psr in existing_psr_cols:
+                        row.append(existing_data.get(t, {}).get(psr, ''))
+                    for psr in missing_psr_types:
+                        row.append(new_data.get(t, {}).get(psr, ''))
+                    writer.writerow(row)
+            print(f'Updated {output_path} with {len(missing_psr_types)} new PSR type(s): {missing_psr_types}')
+        else:
+            all_times = sorted(new_data.keys())
+            with open(output_path, 'w', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow(['time'] + list(psr_types))
+                for t in all_times:
+                    row = [t] + [new_data[t].get(psr, '') for psr in psr_types]
+                    writer.writerow(row)
+            print(f'Wrote {len(all_times)} rows to {output_path}')
 
     if not total_exists:
         all_times_total = sorted(total_data.keys())
