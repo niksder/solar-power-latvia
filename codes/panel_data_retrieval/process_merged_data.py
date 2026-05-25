@@ -19,14 +19,6 @@ OUTPUTS_DIR = os.getenv('OUTPUTS_DIR', 'outputs')
 
 MERGED_PANEL_DATA_PATH = os.path.join(PANEL_DATA_DIR, 'merged_panel_data.csv')
 
-df = pd.read_csv(MERGED_PANEL_DATA_PATH, dtype={'bzone': 'category'})
-df['time'] = pd.to_datetime(df['time'], utc=True, format='mixed')
-_derived_suffixes = ('_share', '_prod_yearly', '_prod_growth', '_share_growth')
-_derived_cols = [c for c in df.columns if any(c.endswith(s) for s in _derived_suffixes)]
-df = df.drop(columns=['policy0', 'policy1'] + _derived_cols, errors='ignore')
-df = df.dropna(subset=['time'])
-df = df.sort_values(['bzone', 'time']).reset_index(drop=True)
-
 
 def _rolling_shares(group):
     group = group.set_index('time').sort_index()
@@ -57,7 +49,15 @@ def _rolling_precipitation(group):
 def process_merged_data():
     # This function is called from main.py after downloading and merging the data.
     # It adds rolling shares, growth rates, accumulated precipitation, and policy columns.
-        
+
+    df = pd.read_csv(MERGED_PANEL_DATA_PATH, dtype={'bzone': 'category'})
+    df['time'] = pd.to_datetime(df['time'], utc=True, format='mixed')
+    _derived_suffixes = ('_share', '_prod_yearly', '_prod_growth', '_share_growth')
+    _derived_cols = [c for c in df.columns if any(c.endswith(s) for s in _derived_suffixes)]
+    df = df.drop(columns=['policy0', 'policy1'] + _derived_cols, errors='ignore')
+    df = df.dropna(subset=['time'])
+    df = df.sort_values(['bzone', 'time']).reset_index(drop=True)
+
     # Process one zone at a time and write directly to CSV to avoid accumulating
     # a full second copy of the DataFrame in memory (as groupby.apply would).
     prod_cols_added = [c for c in PRODUCTION_COLS if c in df.columns]
