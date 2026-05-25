@@ -3,6 +3,7 @@ from download_energy_prices import download_energy_prices
 from download_sources import download_sources
 from download_weather import download_weather
 from merge_panel import merge_panel
+from process_merged_data import process_merged_data
 
 # A table with bidding zone codes, names, countries, geojson filenames
 
@@ -139,4 +140,5 @@ for zone in BIDDING_ZONES:
     download_weather(zone)
 
 merge_panel(BIDDING_ZONES)
+process_merged_data()
 

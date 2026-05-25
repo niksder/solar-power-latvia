@@ -54,30 +54,37 @@ def _rolling_precipitation(group):
     return group.reset_index()
 
 
-# Process one zone at a time and write directly to CSV to avoid accumulating
-# a full second copy of the DataFrame in memory (as groupby.apply would).
-prod_cols_added = [c for c in PRODUCTION_COLS if c in df.columns]
-bzones = df['bzone'].unique().tolist()
-write_header = True
+def process_merged_data():
+    # This function is called from main.py after downloading and merging the data.
+    # It adds rolling shares, growth rates, accumulated precipitation, and policy columns.
+        
+    # Process one zone at a time and write directly to CSV to avoid accumulating
+    # a full second copy of the DataFrame in memory (as groupby.apply would).
+    prod_cols_added = [c for c in PRODUCTION_COLS if c in df.columns]
+    bzones = df['bzone'].unique().tolist()
+    write_header = True
 
-for i, bzone in enumerate(bzones):
-    mask = df['bzone'] == bzone
-    group = df.loc[mask].copy()
-    group = _rolling_shares(group)
-    group = _rolling_precipitation(group)
-    group = group.sort_values('time').reset_index(drop=True)
-    is_latvia_group = group['bzone'] == 'Latvia'
-    group['policy0'] = (is_latvia_group & (group['time'] >= '2020-04-01')).astype(int) # https://www.elektrum.lv/lv/majai/par-mums/jaunumi/likuma-izmainas-veicinas-saules-energijas-izmantosanu-latvija/
-    group['policy1'] = (is_latvia_group & (group['time'].dt.year >= 2024)).astype(int) # https://www.kem.gov.lv/lv/jaunums/apstiprinats-regulejums-atlauju-sanemsanai-saules-veja-parku-uzkratuvju-vai-hibridprojektu-attistibai-latvija-0
-    group['time'] = group['time'].dt.strftime('%Y-%m-%dT%H:%M:%SZ')
-    group.to_csv(MERGED_PANEL_DATA_PATH, mode='w' if write_header else 'a', header=write_header, index=False)
-    write_header = False
-    del group
+    for i, bzone in enumerate(bzones):
+        mask = df['bzone'] == bzone
+        group = df.loc[mask].copy()
+        group = _rolling_shares(group)
+        group = _rolling_precipitation(group)
+        group = group.sort_values('time').reset_index(drop=True)
+        is_latvia_group = group['bzone'] == 'Latvia'
+        group['policy0'] = (is_latvia_group & (group['time'] >= '2020-04-01')).astype(int) # https://www.elektrum.lv/lv/majai/par-mums/jaunumi/likuma-izmainas-veicinas-saules-energijas-izmantosanu-latvija/
+        group['policy1'] = (is_latvia_group & (group['time'].dt.year >= 2024)).astype(int) # https://www.kem.gov.lv/lv/jaunums/apstiprinats-regulejums-atlauju-sanemsanai-saules-veja-parku-uzkratuvju-vai-hibridprojektu-attistibai-latvija-0
+        group['time'] = group['time'].dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+        group.to_csv(MERGED_PANEL_DATA_PATH, mode='w' if write_header else 'a', header=write_header, index=False)
+        write_header = False
+        del group
+        gc.collect()
+        print(f'  [{i + 1}/{len(bzones)}] wrote {bzone}')
+
+    prefixes_added = [c[:-len('_production')] for c in prod_cols_added]
+    print(f'Added rolling shares/yearly/growth for: {prefixes_added}; accumulated precipitation; policy columns. Wrote to {MERGED_PANEL_DATA_PATH}')
+
+    del df
     gc.collect()
-    print(f'  [{i + 1}/{len(bzones)}] wrote {bzone}')
 
-prefixes_added = [c[:-len('_production')] for c in prod_cols_added]
-print(f'Added rolling shares/yearly/growth for: {prefixes_added}; accumulated precipitation; policy columns. Wrote to {MERGED_PANEL_DATA_PATH}')
-
-del df
-gc.collect()
+if __name__ == '__main__':
+    process_merged_data()
