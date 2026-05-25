@@ -130,6 +130,18 @@ BIDDING_ZONES = [
         "name": "Lithuania",
         "countries": ["Lithuania"],
         "geojson": "LT.geojson",
+    },
+    {
+        "code": "10YDK-1--------W",
+        "name": "DK1",
+        "countries": ["Denmark"],
+        "geojson": "DK_1.geojson",
+    },
+    {
+        "code": "10YDK-2--------M",
+        "name": "DK2",
+        "countries": ["Denmark"],
+        "geojson": "DK_2.geojson",
     }
 ]
 
