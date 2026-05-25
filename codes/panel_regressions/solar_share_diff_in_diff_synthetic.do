@@ -129,15 +129,48 @@ program define synth_did
     xtset bzone_id hy_seq_pos
 
     // Scale up GPP PPS for it to have bigger weight in the synth matching
-    replace gdp_pps = gdp_pps * 1000
+    gen gdp_pps_scaled = gdp_pps * 1000
+    label var gdp_pps_scaled "gdp_pps (scaled by 1000 for synth)"
+    gen sun_scaled = sun / 10000
+    label var sun_scaled "sun (scaled by 10000 for synth)"
+    gen energy_price_scaled = energy_price * 100
+    label var energy_price_scaled "energy_price (scaled by 100 for synth)"
+
+    // ---------------------------------------------------------------
+    // Predictor characteristics table (pre-treatment means per bzone)
+    // ---------------------------------------------------------------
+    preserve
+        keep if hy_seq_pos <= `pre_end'
+        collapse (mean) solar_share energy_price_scaled population_density gdp_pps_scaled sun_scaled, ///
+            by(bzone_id)
+        merge m:1 bzone_id using "$g_synth_bzones", nogen
+        sort bzone_id
+        gen byte is_treated = (bzone == "Latvia")
+        order bzone is_treated solar_share energy_price_scaled population_density gdp_pps_scaled sun_scaled
+        label var bzone              "Country / bidding zone"
+        label var is_treated         "Treated (Latvia=1)"
+        label var solar_share        "Solar share (mean, pre-treatment)"
+        label var energy_price_scaled "Energy price (mean, pre-treatment, scaled)"
+        label var population_density "Pop. density (mean, pre-treatment)"
+        label var gdp_pps_scaled     "GDP PPS (mean, pre-treatment, scaled)"
+        label var sun_scaled         "Sun radiation (mean, pre-treatment, scaled)"
+        di as text ""
+        di as text "=== Synth predictor characteristics by bzone (pre-treatment means) [`tag'] ==="
+        list bzone is_treated solar_share energy_price_scaled population_density gdp_pps_scaled sun_scaled, ///
+            noobs sep(0) clean ab(26)
+        /* export delimited using ///
+            "outputs/panel/solar_diff_and_diff/synth_predictors_`tag'.csv", ///
+            replace
+        di as text "Predictor table saved: outputs/panel/solar_diff_and_diff/synth_predictors_`tag'.csv" */
+    restore
 
     // ---------------------------------------------------------------
     // Step 2: Run synth
     // ---------------------------------------------------------------
     synth solar_share ///
-        solar_share(1(1)`pre_end') energy_price(1(1)`pre_end') ///
-        population_density(1(1)`pre_end') gdp_pps(1(1)`pre_end') ///
-        /*temperature(1(1)`pre_end')*/ sun(1(1)`pre_end') /*precipitation(1(1)`pre_end')*/, ///
+        solar_share(1(1)`ref_pos') ///
+        energy_price_scaled(1(1)`ref_pos') population_density(1(1)`ref_pos') gdp_pps_scaled(1(1)`ref_pos') ///
+        /*temperature(1(1)`ref_pos')*/ sun_scaled(1(1)`ref_pos') /*precipitation(1(1)`ref_pos')*/, ///
         trunit(`lv_id') trperiod(`trperiod_pos') ///
         nested allopt
 
