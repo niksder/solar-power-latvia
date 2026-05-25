@@ -28,10 +28,13 @@ replace precipitation = precipitation * 1000
 // Sum: production columns, precipitation
 // Mean: everything else
 collapse ///
-    (sum)  gas_production ///
-           solar_production ///
+    (sum)  gas_production solar_production ///
+           brown_coal_production coal_gas_production hard_coal_production oil_production oil_shale_production peat_production hydro_ps_production hydro_ror_production hydro_wr_production wind_off_production wind_on_production ///
            total_generation precipitation ///
-    (mean) energy_price gas_share solar_share gas_prod_yearly solar_prod_yearly solar_prod_growth solar_share_growth wind_u100 wind_v100 temperature sun wind ///
+    (mean) energy_price gas_share solar_share gas_prod_yearly solar_prod_yearly solar_prod_growth solar_share_growth ///
+           brown_coal_share coal_gas_share hard_coal_share oil_share oil_shale_share peat_share hydro_ps_share hydro_ror_share hydro_wr_share wind_off_share wind_on_share ///
+           brown_coal_prod_yearly coal_gas_prod_yearly hard_coal_prod_yearly oil_prod_yearly oil_shale_prod_yearly peat_prod_yearly hydro_ps_prod_yearly hydro_ror_prod_yearly hydro_wr_prod_yearly wind_off_prod_yearly wind_on_prod_yearly ///
+           wind_u100 wind_v100 temperature sun wind ///
            precipitation_24h precipitation_weekly precipitation_monthly ///
            policy0 policy1 ///
            population_density gdp_pps ///

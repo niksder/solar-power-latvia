@@ -19,8 +19,19 @@ WEATHER_DATA_DIR = os.getenv('WEATHER_DATA_DIR')
 
 COLUMN_TRANSLATIONS = {
     'energy_price': 'energy_price',          # already clean after prefix removal
+    'energy_sources_B02': 'brown_coal_production',
+    'energy_sources_B03': 'coal_gas_production',
     'energy_sources_B04': 'gas_production',
+    'energy_sources_B05': 'hard_coal_production',
+    'energy_sources_B06': 'oil_production',
+    'energy_sources_B07': 'oil_shale_production',
+    'energy_sources_B08': 'peat_production',
+    'energy_sources_B10': 'hydro_ps_production',
+    'energy_sources_B11': 'hydro_ror_production',
+    'energy_sources_B12': 'hydro_wr_production',
     'energy_sources_B16': 'solar_production',
+    'energy_sources_B18': 'wind_off_production',
+    'energy_sources_B19': 'wind_on_production',
     'total_production_total_generation': 'total_generation',
     'weather_u100': 'wind_u100',
     'weather_v100': 'wind_v100',
