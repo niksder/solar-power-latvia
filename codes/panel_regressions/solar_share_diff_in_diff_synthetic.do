@@ -167,12 +167,17 @@ program define synth_did
     // ---------------------------------------------------------------
     // Step 2: Run synth
     // ---------------------------------------------------------------
+    
+    // matrix imposedWeights = (0.10, 0.10, 0.30, 0.40, 0.10)
+    // numlist imposedWeights = 0.10 0.10 0.30 0.40 0.10 
+
     synth solar_share ///
         solar_share(1(1)`ref_pos') ///
         energy_price_scaled(1(1)`ref_pos') population_density(1(1)`ref_pos') gdp_pps_scaled(1(1)`ref_pos') ///
         /*temperature(1(1)`ref_pos')*/ sun_scaled(1(1)`ref_pos') /*precipitation(1(1)`ref_pos')*/, ///
         trunit(`lv_id') trperiod(`trperiod_pos') ///
-        nested allopt
+        customV(0.25 0.10 0.30 0.30 0.15) ///
+        /*nested allopt*/
 
     // ---------------------------------------------------------------
     // Extract donor weights (e(W_weights) is J×2; col 2 = actual weight)
