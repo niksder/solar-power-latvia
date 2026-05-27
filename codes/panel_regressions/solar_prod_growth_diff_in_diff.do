@@ -136,7 +136,7 @@ foreach k of local hy_pos_vals {
 // Outcome: d_ln_solar = daily log-diff (growth rate) of solar production.
 xtreg d_ln_solar `inter_vars' ///
     temperature hdd cdd wind ln_sun precipitation precipitation_weekly precipitation_monthly ///
-    i.day_of_week i.month /*ib8.hy_seq_pos*/, ///
+    i.day_of_week i.month ib8.hy_seq_pos, ///
     fe vce(cluster bzone_id)
 eststo event_solar_growth
 
