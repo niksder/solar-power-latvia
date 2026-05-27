@@ -22,7 +22,9 @@ gen gas_share_pre_pct = gas_share_pre * 100
 label var gas_share_pre_pct "Gas share on Feb 23 2022 (%)"
 
 // all sources: gas_share brown_coal_share coal_gas_share hard_coal_share oil_share oil_shale_share peat_share hydro_ps_share hydro_ror_share hydro_wr_share wind_off_share wind_on_share
-gen fossils_share_pre = brown_coal_share + coal_gas_share + hard_coal_share + oil_share + oil_shale_share + peat_share 
+gen _tmp3 = brown_coal_share + coal_gas_share + hard_coal_share + oil_share + oil_shale_share + peat_share 
+bysort bzone_id: egen fossils_share_pre = max(_tmp3)
+drop _tmp3
 label var fossils_share_pre "Fossil share on Feb 23 2022 (%)"
 
 // Verify treatment values

@@ -24,7 +24,9 @@ drop _tmp2
 label var solar_share_pre "Solar share on Feb 23 2022 (pre-war baseline, 0–1)"
 
 // all sources: gas_share brown_coal_share coal_gas_share hard_coal_share oil_share oil_shale_share peat_share hydro_ps_share hydro_ror_share hydro_wr_share wind_off_share wind_on_share
-gen fossils_share_pre = brown_coal_share + coal_gas_share + hard_coal_share + oil_share + oil_shale_share + peat_share 
+gen _tmp3 = brown_coal_share + coal_gas_share + hard_coal_share + oil_share + oil_shale_share + peat_share 
+bysort bzone_id: egen fossils_share_pre = max(_tmp3)
+drop _tmp3
 label var fossils_share_pre "Fossil share on Feb 23 2022 (%)"
 
 // Verify treatment values
@@ -125,7 +127,7 @@ foreach k of local hy_pos_vals {
 
 // Two-way FE: bzone absorbed by xtreg fe, period absorbed by ib8.hy_seq_pos.
 // ib8 sets H2 2020 as the omitted base for both FE and interactions.
-xtreg solar_share `inter_vars' /*solar_share_pre*/ ///
+xtreg solar_share `inter_vars' solar_share_pre ///
     fossils_share_pre ///
     /*i.day_of_week*/ i.month ib8.hy_seq_pos, ///
     fe vce(cluster bzone_id)
