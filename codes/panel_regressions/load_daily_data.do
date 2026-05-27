@@ -37,7 +37,7 @@ collapse ///
            wind_u100 wind_v100 temperature sun wind ///
            precipitation_24h precipitation_weekly precipitation_monthly ///
            policy0 policy1 ///
-           population_density gdp_pps ///
+           population_density gdp_pps russia_dependency ///
            year month week_of_year day_of_week, ///
     by(bzone date)
 
