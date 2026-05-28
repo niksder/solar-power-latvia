@@ -13,7 +13,8 @@ MERGED_PANEL_DATA_PATH = os.path.join(PANEL_DATA_DIR, 'merged_panel_data.csv')
 
 plot_df = pd.read_csv(
     MERGED_PANEL_DATA_PATH,
-    usecols=['bzone', 'time', 'gas_share', 'solar_share', 'gas_prod_yearly', 'solar_prod_yearly'],
+    usecols=['bzone', 'time', 'gas_share', 'solar_share', 'gas_prod_yearly', 'solar_prod_yearly',
+             'brown_coal_share', 'coal_gas_share', 'hard_coal_share', 'oil_share', 'oil_shale_share', 'peat_share'],
     dtype={'bzone': 'category'},
 )
 plot_df['time'] = pd.to_datetime(plot_df['time'], utc=True, format='mixed')
@@ -167,3 +168,27 @@ ax.legend(bbox_to_anchor=(1.01, 1), loc='upper left', fontsize=8, frameon=False)
 ax.grid(axis='y', linestyle='--', alpha=0.5)
 fig.tight_layout()
 _save(fig, 'solar_production_growth.png')
+
+# --- Rolling fossil share ---
+FOSSIL_COLS = ['gas_share', 'brown_coal_share', 'coal_gas_share', 'hard_coal_share',
+               'oil_share', 'oil_shale_share', 'peat_share']
+REMOVED_BZONES = ['Poland', 'Estonia', 'Czechia', 'Germany', 'Romania', 'Bulgaria', 'Croatia']
+
+plot_df['fossil_share'] = plot_df[FOSSIL_COLS].sum(axis=1, min_count=1)
+
+fig, ax = plt.subplots(figsize=(13, 6))
+for bzone, group in plot_df.groupby('bzone'):
+    if bzone in REMOVED_BZONES:
+        continue
+    group = group.set_index('time').sort_index()
+    daily = group['fossil_share'].resample('D').mean()
+    ax.plot(daily.index, daily.values * 100, linewidth=2.5 if bzone == 'Latvia' else 1.2, label=bzone,
+            color=ZONE_COLORS.get(bzone))
+ax.set_title('Rolling 365-day fossil share of total electricity production')
+ax.set_xlabel('Date')
+ax.set_ylabel('Fossil share (%)')
+ax.yaxis.set_major_formatter(mticker.FormatStrFormatter('%.1f%%'))
+ax.legend(bbox_to_anchor=(1.01, 1), loc='upper left', fontsize=8, frameon=False)
+ax.grid(axis='y', linestyle='--', alpha=0.5)
+fig.tight_layout()
+_save(fig, 'rolling_fossil_share.png')
