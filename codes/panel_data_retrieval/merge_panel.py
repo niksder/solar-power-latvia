@@ -62,7 +62,11 @@ def _resample_to_hourly(df):
     """
     dt = pd.to_datetime(df['time'], utc=True, errors='coerce')
     diffs = dt.dropna().sort_values().diff().dropna()
-    if diffs.empty or diffs.median() >= pd.Timedelta('55min'):
+    # Use minimum (ignoring near-zero diffs from duplicates) rather than median
+    # so that a zone whose reporting switches from hourly to 15-min mid-series is
+    # still resampled correctly even when the majority of rows are hourly.
+    min_diff = diffs[diffs > pd.Timedelta('1min')].min()
+    if pd.isna(min_diff) or min_diff >= pd.Timedelta('55min'):
         return df
 
     df = df.copy()
