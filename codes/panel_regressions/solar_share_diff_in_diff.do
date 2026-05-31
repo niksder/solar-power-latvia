@@ -6,6 +6,13 @@ do "codes/panel_regressions/load_daily_data.do"
 
 // Drop NL, GR, HU, PT, ES that have higher gas share than LV
 drop if bzone == "Netherlands" | bzone == "Greece" | bzone == "Hungary" | bzone == "Portugal" | bzone == "Spain" 
+drop if bzone == "Switzerland" // Drop Switzerland since it is not EU
+
+
+// Drop Italy (IT_NORTH IT_CNOR IT_CSUD IT_SUD IT_CALA IT_SICI IT_SARD IT_SACOAC IT_SACODC) because of granularity of zones
+drop if bzone == "IT_NORTH" | bzone == "IT_CNOR" | bzone == "IT_CSUD" | bzone == "IT_SUD" | bzone == "IT_CALA" | bzone == "IT_SICI" | bzone == "IT_SARD" | bzone == "IT_SACOAC" | bzone == "IT_SACODC"
+// drop if bzone == "Ireland"
+// drop if bzone == "Cyprus" // Drop Cyprus since it misses data from 2023 and 2024 and elsewhere
 
 cap mkdir "outputs/panel/solar_diff_and_diff"
 
@@ -14,20 +21,20 @@ cap mkdir "outputs/panel/solar_diff_and_diff"
 // gas_share is available from load_daily_data.do
 // =============================================================================
 
-// Pre-war gas share: value on Feb 23 2022 (fixed treatment intensity per bzone)
+// Pre-war gas share: value on Feb 23 2021 (fixed treatment intensity per bzone)
 gen _tmp = gas_share if date == td(23feb2021)
 bysort bzone_id: egen gas_share_pre = max(_tmp)
 drop _tmp
-label var gas_share_pre "Gas share on Feb 23 2022 (pre-war, 0–1)"
+label var gas_share_pre "Gas share on Feb 23 2021 (pre-war, 0–1)"
 
-// Pre-war solar share: value on Feb 23 2022 (baseline solar penetration per bzone)
-gen _tmp2 = solar_share if date == td(23feb2022)
+// Pre-war solar share: value on Feb 23 2021 (baseline solar penetration per bzone)
+gen _tmp2 = solar_share if date == td(23feb2021)
 bysort bzone_id: egen solar_share_pre = max(_tmp2)
 drop _tmp2
-label var solar_share_pre "Solar share on Feb 23 2022 (pre-war baseline, 0–1)"
+label var solar_share_pre "Solar share on Feb 23 2021 (pre-war baseline, 0–1)"
 
 gen coal_share_pre = brown_coal_share + hard_coal_share
-label var coal_share_pre "Coal share on Feb 23 2022 (%)"
+label var coal_share_pre "Coal share on Feb 23 2021 (%)"
 
 // Verify treatment values
 di "Pre-war gas share by bzone:"
