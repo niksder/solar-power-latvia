@@ -172,7 +172,7 @@ _save(fig, 'solar_production_growth.png')
 # --- Rolling fossil share ---
 FOSSIL_COLS = ['gas_share', 'brown_coal_share', 'coal_gas_share', 'hard_coal_share',
                'oil_share', 'oil_shale_share', 'peat_share']
-REMOVED_BZONES = ['Poland', 'Estonia', 'Czechia', 'Germany', 'Romania', 'Bulgaria', 'Croatia']
+REMOVED_BZONES = [] # ['Poland', 'Estonia', 'Czechia', 'Germany', 'Romania', 'Bulgaria', 'Croatia']
 
 plot_df['fossil_share'] = plot_df[FOSSIL_COLS].sum(axis=1, min_count=1)
 
