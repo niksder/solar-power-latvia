@@ -63,6 +63,8 @@ def _parse_zone_year(zone, year):
 
             if resolution_str == 'PT60M':
                 delta = timedelta(hours=1)
+            elif resolution_str == 'PT30M':
+                delta = timedelta(minutes=30)
             elif resolution_str == 'PT15M':
                 delta = timedelta(minutes=15)
             else:

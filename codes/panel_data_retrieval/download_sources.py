@@ -12,6 +12,7 @@ DATA_DIR = os.getenv('PANEL_DATA_DIR')
 ENERGY_SOURCES_DIR = os.getenv('ENERGY_SOURCES_DIR')
 TOTAL_PRODUCTION_DIR = os.getenv('TOTAL_PRODUCTION_DIR', 'total_production')
 SLEEP_TIME = float(os.getenv('SLEEP_TIME', 0.3))
+MAX_RETRIES_ENERGY_SOURCES = int(os.getenv('MAX_RETRIES_ENERGY_SOURCES', 5))
 
 NS = 'urn:iec62325.351:tc57wg16:451-6:generationloaddocument:3:0'
 YEARS = range(2016, 2026) # exclude 2026 since it's not complete yet
@@ -33,33 +34,32 @@ def _download_zone_year_psr(zone, year, psr_type):
         'securityToken': ENTSOE_KEY,
     }
 
-    max_attempts = 5
-    for attempt in range(1, max_attempts + 1):
+    for attempt in range(1, MAX_RETRIES_ENERGY_SOURCES + 1):
         try:
             response = requests.get(api_url, params=params)
         except requests.exceptions.RequestException as e:
-            print(f'Network error downloading energy sources for {zone["name"]} {year} {psr_type} (attempt {attempt}/{max_attempts}): {e}')
-            if attempt < max_attempts:
+            print(f'Network error downloading energy sources for {zone["name"]} {year} {psr_type} (attempt {attempt}/{MAX_RETRIES_ENERGY_SOURCES}): {e}')
+            if attempt < MAX_RETRIES_ENERGY_SOURCES:
                 sleep(SLEEP_TIME)
             continue
 
         if response.status_code != 200:
-            print(f'Failed to download energy sources for {zone["name"]} {year} {psr_type} (attempt {attempt}/{max_attempts}). Status code: {response.status_code}')
-            if attempt < max_attempts:
+            print(f'Failed to download energy sources for {zone["name"]} {year} {psr_type} (attempt {attempt}/{MAX_RETRIES_ENERGY_SOURCES}). Status code: {response.status_code}')
+            if attempt < MAX_RETRIES_ENERGY_SOURCES:
                 sleep(SLEEP_TIME)
             continue
 
         try:
             root = ET.fromstring(response.content)
         except ET.ParseError as e:
-            print(f'Failed to parse XML response for {zone["name"]} {year} {psr_type} (attempt {attempt}/{max_attempts}): {e}')
-            if attempt < max_attempts:
+            print(f'Failed to parse XML response for {zone["name"]} {year} {psr_type} (attempt {attempt}/{MAX_RETRIES_ENERGY_SOURCES}): {e}')
+            if attempt < MAX_RETRIES_ENERGY_SOURCES:
                 sleep(SLEEP_TIME)
             continue
 
         if root.tag != f'{{{NS}}}GL_MarketDocument':
-            print(f'Unexpected document type for {zone["name"]} {year} {psr_type} (attempt {attempt}/{max_attempts}): {root.tag}')
-            if attempt < max_attempts:
+            print(f'Unexpected document type for {zone["name"]} {year} {psr_type} (attempt {attempt}/{MAX_RETRIES_ENERGY_SOURCES}): {root.tag}')
+            if attempt < MAX_RETRIES_ENERGY_SOURCES:
                 sleep(SLEEP_TIME)
             continue
 
@@ -72,7 +72,7 @@ def _download_zone_year_psr(zone, year, psr_type):
         print(f'Downloaded energy sources for {zone["name"]} {year} {psr_type} -> {file_path}')
         return
 
-    print(f'Giving up on energy sources for {zone["name"]} {year} {psr_type} after {max_attempts} attempts.')
+    print(f'Giving up on energy sources for {zone["name"]} {year} {psr_type} after {MAX_RETRIES_ENERGY_SOURCES} attempts.')
 
 
 def _download_zone_year_total(zone, year):
@@ -88,33 +88,32 @@ def _download_zone_year_total(zone, year):
         'securityToken': ENTSOE_KEY,
     }
 
-    max_attempts = 5
-    for attempt in range(1, max_attempts + 1):
+    for attempt in range(1, MAX_RETRIES_ENERGY_SOURCES + 1):
         try:
             response = requests.get(api_url, params=params)
         except requests.exceptions.RequestException as e:
-            print(f'Network error downloading total generation for {zone["name"]} {year} (attempt {attempt}/{max_attempts}): {e}')
-            if attempt < max_attempts:
+            print(f'Network error downloading total generation for {zone["name"]} {year} (attempt {attempt}/{MAX_RETRIES_ENERGY_SOURCES}): {e}')
+            if attempt < MAX_RETRIES_ENERGY_SOURCES:
                 sleep(SLEEP_TIME)
             continue
 
         if response.status_code != 200:
-            print(f'Failed to download total generation for {zone["name"]} {year} (attempt {attempt}/{max_attempts}). Status code: {response.status_code}')
-            if attempt < max_attempts:
+            print(f'Failed to download total generation for {zone["name"]} {year} (attempt {attempt}/{MAX_RETRIES_ENERGY_SOURCES}). Status code: {response.status_code}')
+            if attempt < MAX_RETRIES_ENERGY_SOURCES:
                 sleep(SLEEP_TIME)
             continue
 
         try:
             root = ET.fromstring(response.content)
         except ET.ParseError as e:
-            print(f'Failed to parse XML response for total generation {zone["name"]} {year} (attempt {attempt}/{max_attempts}): {e}')
-            if attempt < max_attempts:
+            print(f'Failed to parse XML response for total generation {zone["name"]} {year} (attempt {attempt}/{MAX_RETRIES_ENERGY_SOURCES}): {e}')
+            if attempt < MAX_RETRIES_ENERGY_SOURCES:
                 sleep(SLEEP_TIME)
             continue
 
         if root.tag != f'{{{NS}}}GL_MarketDocument':
-            print(f'Unexpected document type for total generation {zone["name"]} {year} (attempt {attempt}/{max_attempts}): {root.tag}')
-            if attempt < max_attempts:
+            print(f'Unexpected document type for total generation {zone["name"]} {year} (attempt {attempt}/{MAX_RETRIES_ENERGY_SOURCES}): {root.tag}')
+            if attempt < MAX_RETRIES_ENERGY_SOURCES:
                 sleep(SLEEP_TIME)
             continue
 
@@ -127,7 +126,7 @@ def _download_zone_year_total(zone, year):
         print(f'Downloaded total generation for {zone["name"]} {year} -> {file_path}')
         return
 
-    print(f'Giving up on total generation for {zone["name"]} {year} after {max_attempts} attempts.')
+    print(f'Giving up on total generation for {zone["name"]} {year} after {MAX_RETRIES_ENERGY_SOURCES} attempts.')
 
 
 def _parse_zone_year_total(zone, year):
@@ -155,6 +154,8 @@ def _parse_zone_year_total(zone, year):
 
             if resolution_str == 'PT60M':
                 delta = timedelta(hours=1)
+            elif resolution_str == 'PT30M':
+                delta = timedelta(minutes=30)
             elif resolution_str == 'PT15M':
                 delta = timedelta(minutes=15)
             else:
@@ -209,6 +210,8 @@ def _parse_zone_year_psr(zone, year, psr_type):
 
             if resolution_str == 'PT60M':
                 delta = timedelta(hours=1)
+            elif resolution_str == 'PT30M':
+                delta = timedelta(minutes=30)
             elif resolution_str == 'PT15M':
                 delta = timedelta(minutes=15)
             else:

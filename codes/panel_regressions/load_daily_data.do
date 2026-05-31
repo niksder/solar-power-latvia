@@ -12,7 +12,7 @@ format date %td
 // Drop observations before 2017-01-01 and after 2026-01-01
 drop if date < td(01jan2017) | date >= td(01jan2026)
 
-drop if bzone == "Estonia" // For it uses oil 
+// drop if bzone == "Estonia" // For it uses oil 
 
 // drop if bzone == "Germany" | bzone == "Croatia" | bzone == "SE1" | bzone == "SE2" | bzone == "SE3" | bzone == "SE4" // SE missing data till 2020, Germany and Croatia missing solar data for 2016 and 2017.
 // drop if bzone == "SE1" | bzone == "SE2" | bzone == "SE3" | bzone == "SE4" // SE missing data till 2020

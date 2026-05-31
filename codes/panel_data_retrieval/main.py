@@ -172,7 +172,73 @@ BIDDING_ZONES = [
         "name": "Spain",
         "countries": ["Spain"],
         "geojson": "ES.geojson",
-    }
+    },
+    {
+        "code": "10Y1001A1001A73I",
+        "name": "IT_NORTH",
+        "countries": ["Italy"],
+        "geojson": "IT_NORD.geojson",
+    },
+    {
+        "code": "10Y1001A1001A70O",
+        "name": "IT_CNOR",
+        "countries": ["Italy"],
+        "geojson": "IT_CNOR.geojson",
+    },
+    {
+        "code": "10Y1001A1001A71M",
+        "name": "IT_CSUD",
+        "countries": ["Italy"],
+        "geojson": "IT_CSUD.geojson",
+    },
+    {
+        "code": "10Y1001A1001A788",
+        "name": "IT_SUD",
+        "countries": ["Italy"],
+        "geojson": "IT_SUD.geojson",
+    },
+    {
+        "code": "10Y1001C--00096J",
+        "name": "IT_CALA",
+        "countries": ["Italy"],
+        "geojson": "IT_CALA.geojson",
+    },
+    {
+        "code": "10Y1001A1001A75E",
+        "name": "IT_SICI",
+        "countries": ["Italy"],
+        "geojson": "IT_SICI.geojson",
+    },
+    {
+        "code": "10Y1001A1001A74G",
+        "name": "IT_SARD",
+        "countries": ["Italy"],
+        "geojson": "IT_SARD.geojson",
+    },
+    {
+        "code": "10Y1001A1001A885",
+        "name": "IT_SACOAC",
+        "countries": ["Italy"],
+        "geojson": "IT_SARD.geojson",
+    },
+    {
+        "code": "10Y1001A1001A893",
+        "name": "IT_SACODC",
+        "countries": ["Italy"],
+        "geojson": "IT_SARD.geojson",
+    },
+    {
+        "code": "10YCY-1001A0003J",
+        "name" : "Cyprus",
+        "countries": ["Cyprus"],
+        "geojson": "CY.geojson",
+    },
+    {
+        "code": "10Y1001A1001A59C",
+        "name": "Ireland",
+        "countries": ["Ireland"],
+        "geojson": "IE.geojson",
+    },
 ]
 
 for zone in BIDDING_ZONES:
