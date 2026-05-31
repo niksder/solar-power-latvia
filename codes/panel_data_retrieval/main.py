@@ -241,12 +241,13 @@ BIDDING_ZONES = [
     },
 ]
 
-for zone in BIDDING_ZONES:
-    print(f"{zone['code']}: {zone['name']} ({', '.join(zone['countries'])}) - {zone['geojson']}")
-    download_energy_prices(zone)
-    download_sources(zone)
-    download_weather(zone)
+if __name__ == '__main__':
+    for zone in BIDDING_ZONES:
+        print(f"{zone['code']}: {zone['name']} ({', '.join(zone['countries'])}) - {zone['geojson']}")
+        download_energy_prices(zone)
+        download_sources(zone)
+        download_weather(zone)
 
-merge_panel(BIDDING_ZONES)
-process_merged_data()
+    merge_panel(BIDDING_ZONES)
+    process_merged_data()
 
