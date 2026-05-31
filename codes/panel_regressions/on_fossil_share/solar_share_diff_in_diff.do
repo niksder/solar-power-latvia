@@ -6,6 +6,10 @@ do "codes/panel_regressions/load_daily_data.do"
 
 cap mkdir "outputs/panel/solar_diff_and_diff/on_fossil_share"
 
+
+// Drop NL, GR, HU, PT, ES that have higher gas share than LV
+drop if bzone == "Netherlands" | bzone == "Greece" | bzone == "Hungary" | bzone == "Portugal" | bzone == "Spain" 
+
 // Drop bzones with higher fossil share than Latvia
 drop if bzone == "Poland" | bzone == "Estonia" | bzone == "Czechia" | bzone == "Germany" | bzone == "Romania" | bzone == "Bulgaria" | bzone == "Croatia"
 

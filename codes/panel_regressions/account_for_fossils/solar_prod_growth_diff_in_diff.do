@@ -4,6 +4,9 @@ clear
 cd "/home/niks/Projects/solar-power-latvia"
 do "codes/panel_regressions/load_daily_data.do"
 
+// Drop NL, GR, HU, PT, ES that have higher gas share than LV
+drop if bzone == "Netherlands" | bzone == "Greece" | bzone == "Hungary" | bzone == "Portugal" | bzone == "Spain" 
+
 cap mkdir "outputs/panel/solar_diff_and_diff/account_for_fossils"
 
 // =============================================================================
