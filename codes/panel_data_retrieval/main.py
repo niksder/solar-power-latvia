@@ -142,6 +142,36 @@ BIDDING_ZONES = [
         "name": "DK2",
         "countries": ["Denmark"],
         "geojson": "DK_2.geojson",
+    },
+    {
+        "code": "10YNL----------L",
+        "name": "Netherlands",
+        "countries": ["Netherlands"],
+        "geojson": "NL.geojson",
+    },
+    {
+        "code": "10YGR-HTSO-----Y",
+        "name": "Greece",
+        "countries": ["Greece"],
+        "geojson": "GR.geojson",
+    },
+    {
+        "code": "10YHU-MAVIR----U",
+        "name": "Hungary",
+        "countries": ["Hungary"],
+        "geojson": "HU.geojson",
+    },
+    {
+        "code": "10YPT-REN------W",
+        "name": "Portugal",
+        "countries": ["Portugal"],
+        "geojson": "PT.geojson",
+    },
+    {
+        "code": "10YES-REE------0",
+        "name": "Spain",
+        "countries": ["Spain"],
+        "geojson": "ES.geojson",
     }
 ]
 
