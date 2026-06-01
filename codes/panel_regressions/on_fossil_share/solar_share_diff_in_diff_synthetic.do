@@ -12,6 +12,15 @@ drop if bzone == "Netherlands" | bzone == "Greece" | bzone == "Hungary" | bzone 
 // Drop bzones with higher fossil share than Latvia
 drop if bzone == "Poland" | bzone == "Estonia" | bzone == "Czechia" | bzone == "Germany" | bzone == "Romania" | bzone == "Bulgaria" | bzone == "Croatia"
 
+drop if bzone == "Switzerland" // Drop Switzerland since it is not EU
+
+
+// Drop Italy (IT_NORTH IT_CNOR IT_CSUD IT_SUD IT_CALA IT_SICI IT_SARD IT_SACOAC IT_SACODC) because of granularity of zones
+// drop if bzone == "IT_NORTH" | bzone == "IT_CNOR" | bzone == "IT_CSUD" | bzone == "IT_SUD" | bzone == "IT_CALA" | bzone == "IT_SICI" | bzone == "IT_SARD" | bzone == "IT_SACOAC" | bzone == "IT_SACODC"
+// drop if bzone == "Ireland"
+
+drop if bzone == "Cyprus" // Drop Cyprus since it misses data from 2023 and 2024 and elsewhere AND PRICES
+
 // =============================================================================
 // BASE VARIABLE CONSTRUCTION (computed once; shared across all program calls)
 // =============================================================================
@@ -148,32 +157,41 @@ program define synth_did
     gen energy_price_scaled = energy_price * 100
     label var energy_price_scaled "energy_price (scaled by 100 for synth)"
 
+    // Binary: bzone had > 0.5% mean solar share before the shock
+    // Donors with effectively no solar pre-shock get penalised in matching
+    bysort bzone_id: egen _mean_pre_solar = mean(cond(hy_seq_pos <= `pre_end', solar_share, .))
+    gen high_solar_pre = (_mean_pre_solar > 0.005)
+    label var high_solar_pre "Had >0.5% avg solar share pre-shock"
+    drop _mean_pre_solar
+
     // ---------------------------------------------------------------
     // Predictor characteristics table (pre-treatment means per bzone)
     // ---------------------------------------------------------------
     preserve
         keep if hy_seq_pos <= `pre_end'
-        collapse (mean) solar_share energy_price_scaled population_density gdp_pps_scaled sun_scaled, ///
+        collapse (mean) solar_share energy_price population_density gdp_pps sun ///
+                 (max)  high_solar_pre, ///
             by(bzone_id)
         merge m:1 bzone_id using "$g_synth_bzones", nogen
         sort bzone_id
         gen byte is_treated = (bzone == "Latvia")
-        order bzone is_treated solar_share energy_price_scaled population_density gdp_pps_scaled sun_scaled
+        order bzone is_treated solar_share high_solar_pre energy_price population_density gdp_pps sun
         label var bzone              "Country / bidding zone"
         label var is_treated         "Treated (Latvia=1)"
         label var solar_share        "Solar share (mean, pre-treatment)"
-        label var energy_price_scaled "Energy price (mean, pre-treatment, scaled)"
+        label var high_solar_pre     "Had >0.5% avg solar share pre-shock"
+        label var energy_price "Energy price (mean, pre-treatment)"
         label var population_density "Pop. density (mean, pre-treatment)"
-        label var gdp_pps_scaled     "GDP PPS (mean, pre-treatment, scaled)"
-        label var sun_scaled         "Sun radiation (mean, pre-treatment, scaled)"
+        label var gdp_pps         "GDP PPS (mean, pre-treatment)"
+        label var sun             "Sun radiation (mean, pre-treatment)"
         di as text ""
         di as text "=== Synth predictor characteristics by bzone (pre-treatment means) [`tag'] ==="
-        list bzone is_treated solar_share energy_price_scaled population_density gdp_pps_scaled sun_scaled, ///
+        list bzone is_treated solar_share high_solar_pre energy_price population_density gdp_pps sun, ///
             noobs sep(0) clean ab(26)
         /* export delimited using ///
-            "outputs/panel/solar_diff_and_diff/on_fossil_share/synth_predictors_`tag'.csv", ///
+            "outputs/panel/solar_diff_and_diff/synthetic/synth_predictors_`tag'.csv", ///
             replace
-        di as text "Predictor table saved: outputs/panel/solar_diff_and_diff/on_fossil_share/synth_predictors_`tag'.csv" */
+        di as text "Predictor table saved: outputs/panel/solar_diff_and_diff/synthetic/synth_predictors_`tag'.csv" */
     restore
 
     // ---------------------------------------------------------------
@@ -185,11 +203,12 @@ program define synth_did
 
     synth solar_share ///
         solar_share(1(1)`ref_pos') ///
-        energy_price_scaled(1(1)`ref_pos') population_density(1(1)`ref_pos') gdp_pps_scaled(1(1)`ref_pos') ///
-        /*temperature(1(1)`ref_pos')*/ sun_scaled(1(1)`ref_pos') /*precipitation(1(1)`ref_pos')*/, ///
+        energy_price(1(1)`ref_pos') population_density(1(1)`ref_pos') gdp_pps(1(1)`ref_pos') ///
+        /*temperature(1(1)`ref_pos')*/ sun(1(1)`ref_pos') /*precipitation(1(1)`ref_pos')*/ ///
+        high_solar_pre, ///
         trunit(`lv_id') trperiod(`trperiod_pos') ///
-        /*customV(0.25 0.10 0.30 0.30 0.15)*/ ///
-        nested allopt
+        customV(0.10 0.10 0.30 0.25 0.15 0.10) ///
+        /*nested allopt*/
 
     // ---------------------------------------------------------------
     // Extract donor weights (e(W_weights) is J×2; col 2 = actual weight)

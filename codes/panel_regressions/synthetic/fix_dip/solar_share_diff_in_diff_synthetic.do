@@ -6,6 +6,15 @@ do "codes/panel_regressions/load_daily_data.do"
 
 // Drop NL, GR, HU, PT, ES that have higher gas share than LV
 drop if bzone == "Netherlands" | bzone == "Greece" | bzone == "Hungary" | bzone == "Portugal" | bzone == "Spain" 
+drop if bzone == "Switzerland" // Drop Switzerland since it is not EU
+
+
+// Drop Italy (IT_NORTH IT_CNOR IT_CSUD IT_SUD IT_CALA IT_SICI IT_SARD IT_SACOAC IT_SACODC) because of granularity of zones
+drop if bzone == "IT_NORTH" | bzone == "IT_CNOR" | bzone == "IT_CSUD" | bzone == "IT_SUD" | bzone == "IT_CALA" | bzone == "IT_SICI" | bzone == "IT_SARD" | bzone == "IT_SACOAC" | bzone == "IT_SACODC"
+// drop if bzone == "Ireland"
+
+drop if bzone == "Cyprus" // Drop Cyprus since it misses data from 2023 and 2024 and elsewhere AND PRICES
+
 
 cap mkdir "outputs/panel/solar_diff_and_diff/synthetic"
 
@@ -151,22 +160,24 @@ program define synth_did
     // ---------------------------------------------------------------
     preserve
         keep if hy_seq_pos <= `pre_end'
-        collapse (mean) solar_share energy_price_scaled population_density gdp_pps_scaled sun_scaled, ///
+        collapse (mean) solar_share energy_price population_density gdp_pps sun ///
+                 (max)  high_solar_pre, ///
             by(bzone_id)
         merge m:1 bzone_id using "$g_synth_bzones", nogen
         sort bzone_id
         gen byte is_treated = (bzone == "Latvia")
-        order bzone is_treated solar_share energy_price_scaled population_density gdp_pps_scaled sun_scaled
+        order bzone is_treated solar_share high_solar_pre energy_price population_density gdp_pps sun
         label var bzone              "Country / bidding zone"
         label var is_treated         "Treated (Latvia=1)"
         label var solar_share        "Solar share (mean, pre-treatment)"
-        label var energy_price_scaled "Energy price (mean, pre-treatment, scaled)"
+        label var high_solar_pre     "Had >0.5% avg solar share pre-shock"
+        label var energy_price "Energy price (mean, pre-treatment)"
         label var population_density "Pop. density (mean, pre-treatment)"
-        label var gdp_pps_scaled     "GDP PPS (mean, pre-treatment, scaled)"
-        label var sun_scaled         "Sun radiation (mean, pre-treatment, scaled)"
+        label var gdp_pps         "GDP PPS (mean, pre-treatment)"
+        label var sun             "Sun radiation (mean, pre-treatment)"
         di as text ""
         di as text "=== Synth predictor characteristics by bzone (pre-treatment means) [`tag'] ==="
-        list bzone is_treated solar_share energy_price_scaled population_density gdp_pps_scaled sun_scaled, ///
+        list bzone is_treated solar_share high_solar_pre energy_price population_density gdp_pps sun, ///
             noobs sep(0) clean ab(26)
         /* export delimited using ///
             "outputs/panel/solar_diff_and_diff/synthetic/synth_predictors_`tag'.csv", ///
@@ -183,12 +194,12 @@ program define synth_did
 
     synth solar_share ///
         solar_share(1(1)`ref_pos') ///
-        energy_price_scaled(1(1)`ref_pos') population_density(1(1)`ref_pos') gdp_pps_scaled(1(1)`ref_pos') ///
-        /*temperature(1(1)`ref_pos')*/ sun_scaled(1(1)`ref_pos') /*precipitation(1(1)`ref_pos')*/ ///
-        /*high_solar_pre*/, ///
+        energy_price(1(1)`ref_pos') population_density(1(1)`ref_pos') gdp_pps(1(1)`ref_pos') ///
+        /*temperature(1(1)`ref_pos')*/ sun(1(1)`ref_pos') /*precipitation(1(1)`ref_pos')*/ ///
+        high_solar_pre, ///
         trunit(`lv_id') trperiod(`trperiod_pos') ///
-        /*customV(0.25 0.10 0.30 0.30 0.15 0.10)*/ ///
-        nested allopt
+        customV(0.10 0.10 0.30 0.25 0.15 0.10) ///
+        /*nested allopt*/
 
     // ---------------------------------------------------------------
     // Extract donor weights (e(W_weights) is J×2; col 2 = actual weight)
@@ -288,7 +299,7 @@ program define synth_did
             subtitle("Red line = treatment start (`hy_lbl' `yr')") ///
             note("Synthetic control (Abadie et al. 2010).", size(vsmall)) ///
             scheme(s2color)
-        graph export "outputs/panel/solar_diff_and_diff/synthetic/synth_path_solar_share_`tag'.png", ///
+        graph export "outputs/panel/solar_diff_and_diff/synthetic/synth_path_solar_share_`tag'_fix_dip.png", ///
             replace width(1400) height(900)
 
         // Gas share path
@@ -312,7 +323,7 @@ program define synth_did
             subtitle("Red line = treatment start (`hy_lbl' `yr')") ///
             note("Synthetic control (Abadie et al. 2010).", size(vsmall)) ///
             scheme(s2color)
-        graph export "outputs/panel/solar_diff_and_diff/synthetic/synth_path_gas_share_`tag'.png", ///
+        graph export "outputs/panel/solar_diff_and_diff/synthetic/synth_path_gas_share_`tag'_fix_dip.png", ///
             replace width(1400) height(900)
     restore
 
@@ -452,7 +463,7 @@ program define synth_did
                  "95%/90% CIs; SE clustered at month-year level.", size(vsmall)) ///
             scheme(s2color)
 
-        graph export "outputs/panel/solar_diff_and_diff/synthetic/event_study_solar_share_`tag'.png", ///
+        graph export "outputs/panel/solar_diff_and_diff/synthetic/event_study_solar_share_`tag'_fix_dip.png", ///
             replace width(1400) height(900)
     restore
 
