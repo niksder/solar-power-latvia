@@ -76,6 +76,7 @@ def plot_energy_mix(bzone: str) -> None:
 
     df = df.set_index('time').sort_index()
     df['total_gen_yearly'] = df['total_generation'].rolling('365D').sum()
+    df = df[df.index.year != 2016]
     monthly = df[ALL_SOURCES + ['total_gen_yearly']].resample('ME').mean()
 
     # Only plot sources that have at least some non-zero data for this zone
